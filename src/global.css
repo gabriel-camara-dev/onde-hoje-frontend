@@ -1,40 +1,134 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap");
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-ink: var(--app-ink);
+  --color-paper: var(--app-paper);
+  --color-line: var(--app-line);
+  --color-muted: var(--app-muted);
+  --color-surface: var(--app-surface);
+  --color-surface-muted: var(--app-surface-muted);
+  --color-contrast: var(--app-contrast);
+  --color-on-contrast: var(--app-on-contrast);
+  --color-teal: var(--app-brand);
+  --color-teal-dark: var(--app-brand-strong);
+  --color-teal-soft: var(--app-brand-soft);
+  --color-coral: var(--app-brand);
+  --color-amber: var(--app-accent);
+  --shadow-panel: var(--app-shadow-panel);
+}
 
 :root {
-  --secondary-color: #1c1c1e;
-  --primary-color: #2c2c2e;
-  --background-color: #f9f9f9;
-  --text-color: white;
+  color-scheme: light;
+  --app-ink: #191124;
+  --app-paper: #f7f3ff;
+  --app-surface: #ffffff;
+  --app-surface-muted: #f1eaff;
+  --app-contrast: #160d20;
+  --app-on-contrast: #ffffff;
+  --app-line: #dfd3f6;
+  --app-muted: #675a75;
+  --app-brand: #7c3aed;
+  --app-brand-strong: #5b21b6;
+  --app-brand-soft: #efe7ff;
+  --app-accent: #c4b5fd;
+  --app-shadow-panel: 0 18px 52px rgba(76, 29, 149, 0.12);
+}
+
+.dark {
+  color-scheme: dark;
+  --app-ink: #f8f5ff;
+  --app-paper: #08030f;
+  --app-surface: #150d1f;
+  --app-surface-muted: #21142f;
+  --app-contrast: #12091c;
+  --app-on-contrast: #ffffff;
+  --app-line: #3b2459;
+  --app-muted: #b8a9cd;
+  --app-brand: #8b5cf6;
+  --app-brand-strong: #a78bfa;
+  --app-brand-soft: #2a1740;
+  --app-accent: #6d28d9;
+  --app-shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.36);
 }
 
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
 }
 
-p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: var(--text-color);
-}
-
-ul,
-ol {
-  list-style: none;
-}
-
-a {
-  text-decoration: none;
-  color: var(--text-color);
+html {
+  font-family:
+    Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
 body {
-  background-color: var(--primary-color);
-  height: 100vh;
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top left, rgba(124, 58, 237, 0.16), transparent 34rem),
+    var(--app-paper);
+  color: var(--app-ink);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(139, 92, 246, 0.28), transparent 34rem),
+    linear-gradient(135deg, #08030f 0%, #12091c 52%, #08030f 100%);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.menu-overlay-enter {
+  animation: menuOverlayIn 180ms ease-out both;
+}
+
+.menu-panel-enter {
+  animation: menuPanelIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes menuOverlayIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes menuPanelIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-overlay-enter,
+  .menu-panel-enter {
+    animation: none;
+  }
 }

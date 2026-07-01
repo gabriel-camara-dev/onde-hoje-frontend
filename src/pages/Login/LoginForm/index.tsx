@@ -1,64 +1,53 @@
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { useAuth } from '../../../hooks/useAuth'
-import Input from '../../../components/ui/Input'
-import styles from './styles.module.css'
 import Button from '../../../components/ui/Button'
+import Input from '../../../components/ui/Input'
+import { useAuth } from '../../../hooks/useAuth'
 
 const schema = z.object({
-  emailOrCPF: z
-    .string()
-    .nonempty('Você precisa inserir um e-mail ou CPF')
-    .transform((val) => val.trim()),
-  password: z
-    .string()
-    .nonempty('Você precisa inserir uma senha')
-    .min(6, 'A senha deve ter no mínimo 6 caracteres'),
+  login: z.string().trim().min(3, 'Informe email, CPF ou username'),
+  password: z.string().min(6, 'A senha deve ter no minimo 6 caracteres'),
 })
 
-type LoginForm = z.infer<typeof schema>
+type LoginFormData = z.infer<typeof schema>
 
 export function LoginForm() {
   const {
-    register,
+    formState: { errors, isSubmitting },
     handleSubmit,
+    register,
     reset,
     setError,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({
+  } = useForm<LoginFormData>({
     resolver: zodResolver(schema),
   })
 
   const { authenticate, isPending } = useAuth()
 
-  const onSubmit = (data: LoginForm) => {
+  const onSubmit = (data: LoginFormData) => {
     authenticate(
-      {
-        email: data.emailOrCPF,
-        password: data.password,
-      },
+      data,
       setError as unknown as (name: string, error: { message: string }) => void,
       reset
     )
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+    <form className="grid gap-3" onSubmit={handleSubmit(onSubmit)}>
       <Input
-        {...register('emailOrCPF')}
-        placeholder="Email ou CPF"
-        error={errors.emailOrCPF?.message}
+        {...register('login')}
+        error={errors.login?.message}
+        label="Identificador"
+        placeholder="email, cpf ou username"
       />
       <Input
         {...register('password')}
-        type="password"
-        placeholder="Senha"
         error={errors.password?.message}
+        label="Senha"
+        type="password"
       />
-
-      {errors.root && <p className={styles.error}>{errors.root.message}</p>}
-
+      {errors.root && <p className="text-sm font-bold text-red-700">{errors.root.message}</p>}
       <Button type="submit" disabled={isSubmitting || isPending}>
         {isPending ? 'Entrando...' : 'Entrar'}
       </Button>

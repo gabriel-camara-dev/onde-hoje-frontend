@@ -11,9 +11,9 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   const user = useUserStore((state) => state.user)
 
   if (!accessToken) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" replace />
   } else if (user && user.role !== requiredRole) {
-    return <Navigate to="/access-denied" replace />
+    return <Navigate to="/" replace />
   }
 
   return children

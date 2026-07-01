@@ -1,21 +1,45 @@
 import { createBrowserRouter } from 'react-router-dom'
-import Home from '../pages/Home'
 import { DefaultLayout } from '../layouts/defaultLayout'
+import { ProtectedRoute } from './ProtectedRoute'
+import Admin from '../pages/Admin'
+import Friends from '../pages/Friends'
+import Groups from '../pages/Groups'
+import History from '../pages/History'
+import Home from '../pages/Home'
 import { Login } from '../pages/Login'
+import { OAuthCallback } from '../pages/OAuthCallback'
+import Places from '../pages/Places'
+import Profile from '../pages/Profile'
+import Ranking from '../pages/Ranking'
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <DefaultLayout />,
     children: [
+      { path: '', element: <Home /> },
+      { path: 'places', element: <Places /> },
+      { path: 'ranking', element: <Ranking /> },
+      { path: 'history', element: <History /> },
+      { path: 'groups', element: <Groups /> },
+      { path: 'friends', element: <Friends /> },
+      { path: 'profile', element: <Profile /> },
       {
-        path: '',
-        element: <Home />,
+        path: 'admin',
+        element: (
+          <ProtectedRoute requiredRole="ADMIN">
+            <Admin />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/auth/google/callback',
+    element: <OAuthCallback />,
   },
 ])
