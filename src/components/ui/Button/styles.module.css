@@ -1,0 +1,17 @@
+.button {
+  width: 250px;
+  height: 40px;
+  border: none;
+  border-radius: 5px;
+  padding-left: 10px;
+  font-size: 1.1rem;
+  transition: all .3s;
+  background-color: var(--primary-color);
+  color: whitesmoke;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.button:hover {
+  filter: brightness(1.1);
+}
