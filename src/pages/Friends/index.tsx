@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Check, UserPlus, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 import type { FriendListItem } from '../../@types/OndeHoje'
 import {
   acceptFriendship,
   listFriends,
+  rejectFriendship,
   requestFriendship,
 } from '../../api/ondeHoje'
 import Button from '../../components/ui/Button'
@@ -29,13 +31,19 @@ export default function FriendsPage() {
     mutationFn: acceptFriendship,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['friends'] }),
   })
+  const rejectMutation = useMutation({
+    mutationFn: rejectFriendship,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['friends'] }),
+  })
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const publicId = String(new FormData(event.currentTarget).get('publicId') || '')
+    const username = String(new FormData(event.currentTarget).get('username') || '')
+      .trim()
+      .replace(/^@/, '')
 
-    if (publicId) {
-      requestMutation.mutate(publicId)
+    if (username) {
+      requestMutation.mutate(username)
       event.currentTarget.reset()
     }
   }
@@ -57,13 +65,25 @@ export default function FriendsPage() {
   return (
     <>
       <StatusBanner
-        error={friendsQuery.error?.message ?? requestMutation.error?.message ?? acceptMutation.error?.message}
-        loading={friendsQuery.isLoading || requestMutation.isPending || acceptMutation.isPending}
+        error={
+          friendsQuery.error?.message ??
+          requestMutation.error?.message ??
+          acceptMutation.error?.message ??
+          rejectMutation.error?.message
+        }
+        loading={
+          friendsQuery.isLoading ||
+          requestMutation.isPending ||
+          acceptMutation.isPending ||
+          rejectMutation.isPending
+        }
         message={
           requestMutation.isSuccess
             ? 'Solicitacao enviada.'
             : acceptMutation.isSuccess
               ? 'Amizade aceita.'
+              : rejectMutation.isSuccess
+                ? 'Pedido recusado.'
               : undefined
         }
       />
@@ -71,19 +91,22 @@ export default function FriendsPage() {
         <Panel>
           <h1 className="text-2xl font-black">Amizades</h1>
           <p className="mt-2 text-sm text-muted">
-            Solicite por publicId. O backend ainda nao expoe busca publica de usuarios.
+            Solicite amizade pelo username da pessoa.
           </p>
           <form className="mt-5 grid gap-3" onSubmit={submit}>
-            <Input label="PublicId do usuario" name="publicId" required />
-            <Button type="submit">Enviar pedido</Button>
+            <Input label="Username" name="username" placeholder="amigo_username" required />
+            <Button type="submit">
+              <UserPlus size={17} />
+              Enviar pedido
+            </Button>
           </form>
         </Panel>
         <Panel>
           <div className="grid gap-5 xl:grid-cols-3">
             <FriendColumn
-              action={(publicId) => acceptMutation.mutate(publicId)}
-              actionLabel="Aceitar"
+              acceptAction={(username) => acceptMutation.mutate(username)}
               items={received}
+              rejectAction={(username) => rejectMutation.mutate(username)}
               title="Recebidos"
             />
             <FriendColumn items={accepted} title="Amigos" />
@@ -96,16 +119,16 @@ export default function FriendsPage() {
 }
 
 type FriendColumnProps = {
-  action?: (publicId: string) => void
-  actionLabel?: string
+  acceptAction?: (username: string) => void
+  rejectAction?: (username: string) => void
   items: FriendListItem[]
   title: string
 }
 
 function FriendColumn({
-  action,
-  actionLabel,
+  acceptAction,
   items,
+  rejectAction,
   title,
 }: FriendColumnProps) {
   return (
@@ -118,15 +141,28 @@ function FriendColumn({
           items.map((item) => (
             <article key={item.friend.publicId} className="rounded-lg border border-line p-3">
               <strong className="block">{item.friend.name}</strong>
-              {action && actionLabel && (
-                <Button
-                  className="mt-3 w-full"
-                  type="button"
-                  variant="secondary"
-                  onClick={() => action(item.friend.publicId)}
-                >
-                  {actionLabel}
-                </Button>
+              {item.friend.username && (
+                <span className="mt-1 block text-sm font-bold text-teal">@{item.friend.username}</span>
+              )}
+              {acceptAction && rejectAction && item.friend.username && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => acceptAction(item.friend.username!)}
+                  >
+                    <Check size={16} />
+                    Aceitar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => rejectAction(item.friend.username!)}
+                  >
+                    <X size={16} />
+                    Recusar
+                  </Button>
+                </div>
               )}
             </article>
           ))

@@ -19,6 +19,7 @@ export type MapPlace = Place & {
   voters: Array<{
     publicId: string
     name: string
+    username?: string | null
     avatarUrl?: string | null
     note?: string | null
   }>
@@ -41,6 +42,20 @@ export type Group = {
   todayVotesCount: number
 }
 
+export type MyGroup = Group & {
+  myRole: 'OWNER' | 'MODERATOR' | 'MEMBER'
+  myStatus: 'ACTIVE' | 'PENDING' | 'BLOCKED'
+  members: Array<{
+    status: 'ACTIVE' | 'PENDING' | 'BLOCKED'
+    role: 'OWNER' | 'MODERATOR' | 'MEMBER'
+    user: {
+      publicId: string
+      name: string
+      username: string
+    }
+  }>
+}
+
 export type VoteHistoryItem = {
   id: string
   day: string
@@ -56,6 +71,7 @@ export type FriendListItem = {
   friend: {
     publicId: string
     name: string
+    username?: string | null
   }
 }
 
@@ -63,6 +79,7 @@ export type ListUsersResponse = {
   data: Array<{
     id: string
     name: string
+    username?: string | null
     email: string
     role: 'DEFAULT' | 'ADMIN'
     avatarUrl?: string | null

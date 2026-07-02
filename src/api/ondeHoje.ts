@@ -2,6 +2,7 @@ import type {
   AdminDashboard,
   FriendListItem,
   Group,
+  MyGroup,
   ListUsersResponse,
   MapHistoryDay,
   MapPlace,
@@ -15,7 +16,13 @@ export type MapFilters = {
   city: string
   day: string
   q: string
+  state?: string
   groupPublicId?: string
+}
+
+export type GlobalRankingFilters = {
+  city: string
+  state: string
 }
 
 export type AuthResponse = {
@@ -39,6 +46,14 @@ export async function getTodayMap(filters: MapFilters) {
 export async function getTopPlaces(filters: MapFilters) {
   const response = await axiosPublic.get<MapPlace[]>('/map/top-places', {
     params: compactParams({ ...filters, limit: 10 }),
+  })
+
+  return response.data
+}
+
+export async function getGlobalRanking(filters: GlobalRankingFilters) {
+  const response = await axiosPublic.get<MapPlace[]>('/map/global-ranking', {
+    params: compactParams({ ...filters, limit: 50 }),
   })
 
   return response.data
@@ -81,6 +96,7 @@ export async function authenticate(body: { login: string; password: string }) {
 
 export async function registerUser(body: {
   name: string
+  username: string
   email: string
   password: string
 }) {
@@ -131,26 +147,43 @@ export async function createGroup(body: {
   name: string
   description?: string
   privacy: 'PUBLIC' | 'PRIVATE'
-  city?: string
-  state?: string
+  password?: string
 }) {
   const response = await axiosPrivate.post<Group>('/groups', body)
 
   return response.data
 }
 
-export async function joinGroup(groupPublicId: string) {
-  const response = await axiosPrivate.post(`/groups/${groupPublicId}/join`)
+export async function joinGroup(body: { name: string; password?: string }) {
+  const response = await axiosPrivate.post('/groups/join', body)
 
   return response.data
 }
 
-export async function acceptGroupMember(groupPublicId: string, userPublicId: string) {
+export async function listMyGroups() {
+  const response = await axiosPrivate.get<MyGroup[]>('/groups/my')
+
+  return response.data
+}
+
+export async function acceptGroupMember(groupPublicId: string, username: string) {
   const response = await axiosPrivate.post(
-    `/groups/${groupPublicId}/members/${userPublicId}/accept`
+    `/groups/${groupPublicId}/members/${username}/accept`
   )
 
   return response.data
+}
+
+export async function inviteGroupMember(groupPublicId: string, username: string) {
+  const response = await axiosPrivate.post(
+    `/groups/${groupPublicId}/members/${username}/invite`
+  )
+
+  return response.data
+}
+
+export async function removeGroupMember(groupPublicId: string, username: string) {
+  await axiosPrivate.delete(`/groups/${groupPublicId}/members/${username}`)
 }
 
 export async function listMyVotes() {
@@ -167,20 +200,24 @@ export async function listFriends() {
   return response.data
 }
 
-export async function requestFriendship(userPublicId: string) {
+export async function requestFriendship(username: string) {
   const response = await axiosPrivate.post<{ status: FriendListItem['status'] }>(
-    `/friends/${userPublicId}/request`
+    `/friends/${username}/request`
   )
 
   return response.data
 }
 
-export async function acceptFriendship(userPublicId: string) {
+export async function acceptFriendship(username: string) {
   const response = await axiosPrivate.post<{ status: FriendListItem['status'] }>(
-    `/friends/${userPublicId}/accept`
+    `/friends/${username}/accept`
   )
 
   return response.data
+}
+
+export async function rejectFriendship(username: string) {
+  await axiosPrivate.post(`/friends/${username}/reject`)
 }
 
 export async function listUsers(params: {
@@ -203,6 +240,7 @@ export async function updateUser(
   publicId: string,
   body: Partial<{
     name: string
+    username: string
     email: string
     password: string
   }>

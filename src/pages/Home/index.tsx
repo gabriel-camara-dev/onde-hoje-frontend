@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, MapPin, Navigation, TrendingUp, Vote, X } from 'lucide-react'
+import { CalendarDays, MapPin, Navigation, TrendingUp, UserPlus, Vote, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -10,6 +10,7 @@ import {
   getTodayMap,
   listMyVotes,
   listPublicGroups,
+  requestFriendship,
   type MapFilters,
   voteForPlace,
 } from '../../api/ondeHoje'
@@ -55,7 +56,6 @@ export default function Home() {
         voters: [],
       })
     : undefined
-  const activePlace = selectedPlaceForDay ?? places[0]
 
   const voteMutation = useMutation({
     mutationFn: async (input: {
@@ -125,6 +125,16 @@ export default function Home() {
       toast.error(error.message)
     },
   })
+  const requestFriendshipMutation = useMutation({
+    mutationFn: requestFriendship,
+    onSuccess: async () => {
+      toast.success('Pedido de amizade enviado.')
+      await queryClient.invalidateQueries({ queryKey: ['friends'] })
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
 
   async function refreshVotingData() {
     await Promise.all([
@@ -162,7 +172,7 @@ export default function Home() {
   }
 
   function voteExisting(form: FormData) {
-    if (!activePlace || !requireAuth()) {
+    if (!selectedPlaceForDay || !requireAuth()) {
       return
     }
 
@@ -174,7 +184,7 @@ export default function Home() {
 
     voteMutation.mutate({
       day,
-      placeId: activePlace.id,
+      placeId: selectedPlaceForDay.id,
       groupPublicId: String(form.get('groupPublicId') || '') || undefined,
       note: String(form.get('note') || '') || undefined,
     })
@@ -200,7 +210,7 @@ export default function Home() {
   }
 
   function cancelExistingVote(form: FormData, groupPublicId?: string) {
-    if (!activePlace || !requireAuth()) {
+    if (!selectedPlaceForDay || !requireAuth()) {
       return
     }
 
@@ -212,7 +222,7 @@ export default function Home() {
 
     cancelVoteMutation.mutate({
       day,
-      placeId: activePlace.id,
+      placeId: selectedPlaceForDay.id,
       groupPublicId: groupPublicId ?? (String(form.get('groupPublicId') || '') || undefined),
     })
   }
@@ -231,20 +241,14 @@ export default function Home() {
   }
 
   const selectedPlaceUserVote = myVotesQuery.data?.find(
-    (vote) => vote.day === filters.day && vote.place.id === selectedPlaceForDay?.id
-  )
-  const activePlaceUserVote = myVotesQuery.data?.find(
-    (vote) => vote.day === filters.day && vote.place.id === activePlace?.id
+    (vote) => dateOnly(vote.day) === filters.day && vote.place.id === selectedPlaceForDay?.id
   )
   const selectedPlaceHasUserVote = Boolean(
     selectedPlaceUserVote ??
     selectedPlaceForDay?.voters.some((voter) => voter.publicId === user?.id)
   )
-  const activePlaceHasUserVote = Boolean(
-    activePlaceUserVote ?? activePlace?.voters.some((voter) => voter.publicId === user?.id)
-  )
   const userVotesForSelectedDay =
-    myVotesQuery.data?.filter((vote) => vote.day === filters.day).length ?? 0
+    myVotesQuery.data?.filter((vote) => dateOnly(vote.day) === filters.day).length ?? 0
 
   return (
     <>
@@ -287,7 +291,20 @@ export default function Home() {
                   : 'Esse lugar já existe no mapa. Você pode votar nele agora ou abrir outro marcador para trocar de seleção.'}
               </div>
 
-              {selectedPlaceForDay && <VotersList voters={selectedPlaceForDay.voters} />}
+              {selectedPlaceForDay && (
+                <VotersList
+                  currentUserPublicId={user?.id}
+                  isPending={requestFriendshipMutation.isPending}
+                  voters={selectedPlaceForDay.voters}
+                  onAddFriend={(username) => {
+                    if (!requireAuth()) {
+                      return
+                    }
+
+                    requestFriendshipMutation.mutate(username)
+                  }}
+                />
+              )}
 
               <VotePanel
                 groups={groupsQuery.data ?? []}
@@ -350,7 +367,8 @@ export default function Home() {
               mapQuery.error?.message ??
               voteMutation.error?.message ??
               createAndVoteMutation.error?.message ??
-              cancelVoteMutation.error?.message
+              cancelVoteMutation.error?.message ??
+              requestFriendshipMutation.error?.message
             }
             loading={
               mapQuery.isLoading ||
@@ -358,7 +376,8 @@ export default function Home() {
               myVotesQuery.isLoading ||
               voteMutation.isPending ||
               createAndVoteMutation.isPending ||
-              cancelVoteMutation.isPending
+              cancelVoteMutation.isPending ||
+              requestFriendshipMutation.isPending
             }
           />
 
@@ -386,27 +405,6 @@ export default function Home() {
               <Metric icon={CalendarDays} label="limite" value={3} />
             </div>
           </section>
-
-          {!draftPlace && (
-            <VotePanel
-              groups={groupsQuery.data ?? []}
-              placeName={activePlace?.name}
-              subtitle={activePlace?.formattedAddress}
-              voteCount={activePlace?.voteCount}
-              hasUserVote={activePlaceHasUserVote}
-              isPending={
-                voteMutation.isPending ||
-                createAndVoteMutation.isPending ||
-                cancelVoteMutation.isPending
-              }
-              selectedDay={filters.day}
-              maxDay={maxVoteDay}
-              minDay={today}
-              onDayChange={changeMapDay}
-              onCancelVote={(form) => cancelExistingVote(form, activePlaceUserVote?.group?.id)}
-              onSubmit={voteExisting}
-            />
-          )}
 
           <section className="rounded-3xl border border-line bg-surface p-4 text-ink shadow-panel">
             <div className="mb-3 flex items-center justify-between">
@@ -545,7 +543,17 @@ function VotePanel({
   )
 }
 
-function VotersList({ voters }: { voters: MapPlace['voters'] }) {
+function VotersList({
+  currentUserPublicId,
+  isPending,
+  onAddFriend,
+  voters,
+}: {
+  currentUserPublicId?: string
+  isPending?: boolean
+  onAddFriend: (username: string) => void
+  voters: MapPlace['voters']
+}) {
   if (voters.length === 0) {
     return null
   }
@@ -562,13 +570,29 @@ function VotersList({ voters }: { voters: MapPlace['voters'] }) {
         {voters.map((voter) => (
           <div
             key={voter.publicId}
-            className="grid grid-cols-[44px_1fr] items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3"
+            className="grid grid-cols-[44px_1fr_auto] items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3"
           >
             <Avatar name={voter.name} src={voter.avatarUrl} />
             <div className="min-w-0">
               <strong className="block truncate text-sm">{voter.name}</strong>
+              {voter.username && (
+                <span className="mt-0.5 block truncate text-xs font-bold text-teal">@{voter.username}</span>
+              )}
               {voter.note && <p className="mt-1 text-sm text-muted">{voter.note}</p>}
             </div>
+            {voter.username && voter.publicId !== currentUserPublicId && (
+              <Button
+                aria-label={`Adicionar @${voter.username}`}
+                className="size-12 p-0"
+                disabled={isPending}
+                title={`Adicionar @${voter.username}`}
+                type="button"
+                variant="secondary"
+                onClick={() => onAddFriend(voter.username!)}
+              >
+                <UserPlus size={22} strokeWidth={2.6} />
+              </Button>
+            )}
           </div>
         ))}
       </div>
@@ -587,6 +611,10 @@ function formatDateLabel(day: string) {
     day: '2-digit',
     month: '2-digit',
   }).format(new Date(year, month - 1, date))
+}
+
+function dateOnly(value: string) {
+  return value.slice(0, 10)
 }
 
 function Metric({ icon: Icon, label, value }: { icon: typeof Vote; label: string; value: number }) {

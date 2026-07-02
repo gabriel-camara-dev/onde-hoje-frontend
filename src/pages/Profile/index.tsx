@@ -29,6 +29,7 @@ export default function ProfilePage() {
     mutationFn: (form: FormData) =>
       updateUser(user!.id, {
         name: String(form.get('name') || '') || undefined,
+        username: String(form.get('username') || '') || undefined,
         email: String(form.get('email') || '') || undefined,
         password: String(form.get('password') || '') || undefined,
       }),
@@ -98,6 +99,11 @@ export default function ProfilePage() {
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">
             Atualize suas informacoes publicas e a foto que aparece nos votos.
           </p>
+          {user.username && (
+            <span className="mt-4 inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-black text-teal">
+              @{user.username}
+            </span>
+          )}
 
           <div className="mt-8 flex justify-center">
             <button
@@ -134,6 +140,14 @@ export default function ProfilePage() {
           <form className="mx-auto mt-8 grid max-w-xl gap-4 text-left" onSubmit={handleUpdate}>
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Nome" name="name" defaultValue={user.name} />
+              <Input
+                label="Username"
+                maxLength={30}
+                minLength={3}
+                name="username"
+                pattern="[a-z0-9_]+"
+                defaultValue={user.username ?? ''}
+              />
               <Input label="Email" name="email" type="email" defaultValue={user.email} />
             </div>
             <Input label="Nova senha" minLength={6} name="password" type="password" />

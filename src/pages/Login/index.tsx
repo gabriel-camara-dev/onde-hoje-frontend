@@ -18,6 +18,7 @@ export function Login() {
     mutationFn: (form: FormData) =>
       registerUser({
         name: String(form.get('name')),
+        username: String(form.get('username')),
         email: String(form.get('email')),
         password: String(form.get('password')),
       }),
@@ -119,10 +120,19 @@ export function Login() {
               <p className="mb-2 text-xs font-black uppercase text-teal">Cadastro local</p>
               <h2 className="mb-2 text-2xl font-black">Criar conta</h2>
               <p className="mb-4 text-sm text-muted">
-                Depois de criar sua conta, use seu email para entrar.
+                Depois de criar sua conta, use seu email ou username para entrar.
               </p>
               <form className="grid gap-3" onSubmit={handleRegister}>
                 <Input label="Nome" minLength={4} name="name" placeholder="Seu nome" required />
+                <Input
+                  label="Username"
+                  maxLength={30}
+                  minLength={3}
+                  name="username"
+                  pattern="[a-z0-9_]+"
+                  placeholder="seu_username"
+                  required
+                />
                 <Input
                   label="Email"
                   name="email"

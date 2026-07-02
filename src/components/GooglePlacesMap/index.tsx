@@ -40,6 +40,7 @@ type MapClickHandler = (
 
 const fallbackCenter = { lat: -23.55052, lng: -46.633308 }
 const existingVoteMarkerHitRadiusMeters = 6
+const minZoomToShowExistingPlaces = 12
 const googlePlaceFields = [
   'addressComponents',
   'displayName',
@@ -136,6 +137,10 @@ export function GooglePlacesMap({
             selectFromMapClickRef.current(googleApi, map, event)
           }
         })
+
+        map.addListener('zoom_changed', () => {
+          updateExistingMarkersVisibility(map, markersRef.current)
+        })
       })
       .catch((loadError: Error) => setError(loadError.message))
 
@@ -172,6 +177,7 @@ export function GooglePlacesMap({
       })
       return marker
     })
+    updateExistingMarkersVisibility(map, markersRef.current)
 
     const selected = selectedPlaceId
       ? places.find((place) => place.id === selectedPlaceId)
@@ -385,7 +391,9 @@ export function GooglePlacesMap({
       return
     }
 
-    const nearbyPlace = findNearestMapPlace(location, placesRef.current)
+    const nearbyPlace = shouldShowExistingPlaces(map)
+      ? findNearestMapPlace(location, placesRef.current)
+      : undefined
 
     if (nearbyPlace) {
       selectExistingPlace(nearbyPlace)
@@ -670,6 +678,16 @@ function findNearestMapPlace(latLng: google.maps.LatLng, places: MapPlace[]) {
     }))
     .filter((item) => item.distance <= existingVoteMarkerHitRadiusMeters)
     .sort((a, b) => a.distance - b.distance)[0]?.place
+}
+
+function updateExistingMarkersVisibility(map: google.maps.Map, markers: google.maps.Marker[]) {
+  const visible = shouldShowExistingPlaces(map)
+
+  markers.forEach((marker) => marker.setVisible(visible))
+}
+
+function shouldShowExistingPlaces(map: google.maps.Map) {
+  return (map.getZoom() ?? minZoomToShowExistingPlaces) >= minZoomToShowExistingPlaces
 }
 
 function distanceInMeters(from: google.maps.LatLng, to: google.maps.LatLng) {

@@ -6,7 +6,7 @@ import Input from '../../../components/ui/Input'
 import { useAuth } from '../../../hooks/useAuth'
 
 const schema = z.object({
-  login: z.string().trim().email('Informe um email valido'),
+  login: z.string().trim().min(3, 'Informe seu email ou username'),
   password: z.string().min(6, 'A senha deve ter no minimo 6 caracteres'),
 })
 
@@ -38,14 +38,15 @@ export function LoginForm() {
       <Input
         {...register('login')}
         error={errors.login?.message}
-        label="Email"
-        placeholder="voce@email.com"
-        type="email"
+        label="Email ou username"
+        placeholder="voce@email.com ou seu_username"
+        required
       />
       <Input
         {...register('password')}
         error={errors.password?.message}
         label="Senha"
+        required
         type="password"
       />
       {errors.root && <p className="text-sm font-bold text-red-700">{errors.root.message}</p>}

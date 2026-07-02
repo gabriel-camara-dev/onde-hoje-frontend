@@ -1,173 +1,489 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Check, Trash2, UserPlus, X } from 'lucide-react'
 import type { FormEvent } from 'react'
+import { useMemo, useState } from 'react'
+import type { Group, MyGroup } from '../../@types/OndeHoje'
 import {
   acceptGroupMember,
   createGroup,
+  inviteGroupMember,
   joinGroup,
+  listMyGroups,
   listPublicGroups,
+  removeGroupMember,
 } from '../../api/ondeHoje'
 import Button from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import Input from '../../components/ui/Input'
 import { Panel } from '../../components/ui/Panel'
 import { StatusBanner } from '../../components/ui/StatusBanner'
+import { useUserStore } from '../../stores/userStore'
 
 type GroupsPageProps = {
   city?: string
 }
 
+type GroupTab = 'PUBLIC' | 'PRIVATE'
+
 export default function GroupsPage({ city = '' }: GroupsPageProps) {
   const queryClient = useQueryClient()
+  const user = useUserStore((state) => state.user)
+  const [activeTab, setActiveTab] = useState<GroupTab>('PUBLIC')
+  const [modal, setModal] = useState<'create' | 'join' | null>(null)
+  const [createPrivacy, setCreatePrivacy] = useState<GroupTab>('PUBLIC')
+  const [selectedGroupId, setSelectedGroupId] = useState<string>()
+
   const groupsQuery = useQuery({
     queryKey: ['groups', city],
     queryFn: () => listPublicGroups(city),
   })
+  const myGroupsQuery = useQuery({
+    enabled: Boolean(user),
+    queryKey: ['my-groups'],
+    queryFn: listMyGroups,
+  })
+
   const createMutation = useMutation({
     mutationFn: (form: FormData) =>
       createGroup({
         name: String(form.get('name')),
         description: String(form.get('description') || '') || undefined,
         privacy: String(form.get('privacy')) as 'PUBLIC' | 'PRIVATE',
-        city: String(form.get('city') || '') || undefined,
-        state: String(form.get('state') || '') || undefined,
+        password: String(form.get('password') || '') || undefined,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['groups'] }),
+    onSuccess: () => {
+      setModal(null)
+      refreshGroups()
+    },
   })
   const joinMutation = useMutation({
-    mutationFn: joinGroup,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['groups'] }),
+    mutationFn: (form: FormData) =>
+      joinGroup({
+        name: String(form.get('name')),
+        password: String(form.get('password') || '') || undefined,
+      }),
+    onSuccess: () => {
+      setModal(null)
+      refreshGroups()
+    },
   })
   const acceptMutation = useMutation({
-    mutationFn: (form: FormData) =>
-      acceptGroupMember(String(form.get('groupPublicId')), String(form.get('userPublicId'))),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['groups'] }),
+    mutationFn: ({ groupId, username }: { groupId: string; username: string }) =>
+      acceptGroupMember(groupId, username),
+    onSuccess: () => refreshGroups(),
+  })
+  const inviteMutation = useMutation({
+    mutationFn: ({ groupId, username }: { groupId: string; username: string }) =>
+      inviteGroupMember(groupId, username.replace(/^@/, '')),
+    onSuccess: () => refreshGroups(),
+  })
+  const removeMutation = useMutation({
+    mutationFn: ({ groupId, username }: { groupId: string; username: string }) =>
+      removeGroupMember(groupId, username),
+    onSuccess: () => refreshGroups(),
   })
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function refreshGroups() {
+    queryClient.invalidateQueries({ queryKey: ['groups'] })
+    queryClient.invalidateQueries({ queryKey: ['my-groups'] })
+  }
+
+  function submitCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     createMutation.mutate(new FormData(event.currentTarget))
-    event.currentTarget.reset()
   }
 
-  function submitAcceptance(event: FormEvent<HTMLFormElement>) {
+  function submitJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    acceptMutation.mutate(new FormData(event.currentTarget))
-    event.currentTarget.reset()
+    joinMutation.mutate(new FormData(event.currentTarget))
   }
 
-  const groups = groupsQuery.data ?? []
+  const publicGroups = groupsQuery.data ?? []
+  const myGroups = myGroupsQuery.data ?? []
+  const visibleGroups = useMemo(() => {
+    if (activeTab === 'PRIVATE') {
+      return myGroups.filter((group) => group.privacy === 'PRIVATE')
+    }
+
+    const myPublicGroups = myGroups.filter((group) => group.privacy === 'PUBLIC')
+    const myPublicIds = new Set(myPublicGroups.map((group) => group.id))
+
+    return [...myPublicGroups, ...publicGroups.filter((group) => !myPublicIds.has(group.id))]
+  }, [activeTab, myGroups, publicGroups])
+  const selectedGroup = myGroups.find((group) => group.id === selectedGroupId)
 
   return (
     <>
       <StatusBanner
         error={
           groupsQuery.error?.message ??
+          myGroupsQuery.error?.message ??
           createMutation.error?.message ??
           joinMutation.error?.message ??
-          acceptMutation.error?.message
+          acceptMutation.error?.message ??
+          inviteMutation.error?.message ??
+          removeMutation.error?.message
         }
         loading={
           groupsQuery.isLoading ||
+          myGroupsQuery.isLoading ||
           createMutation.isPending ||
           joinMutation.isPending ||
-          acceptMutation.isPending
+          acceptMutation.isPending ||
+          inviteMutation.isPending ||
+          removeMutation.isPending
         }
         message={
           createMutation.isSuccess
             ? 'Grupo criado.'
             : joinMutation.isSuccess
-              ? 'Solicitacao enviada.'
+              ? 'Entrada solicitada.'
               : acceptMutation.isSuccess
                 ? 'Membro aprovado.'
-                : undefined
+                : inviteMutation.isSuccess
+                  ? 'Membro convidado.'
+                  : removeMutation.isSuccess
+                    ? 'Membro removido.'
+                    : undefined
         }
       />
-      <section className="grid gap-4 lg:grid-cols-[1fr_380px]">
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(360px,.8fr)_minmax(0,1.2fr)]">
         <Panel>
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-2xl font-black">Grupos publicos</h1>
-            <strong className="text-muted">{groups.length}</strong>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-black">Grupos</h1>
+              <p className="mt-1 text-sm text-muted">Entre em grupos, veja membros e gerencie convites.</p>
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="secondary" onClick={() => setModal('join')}>
+                Entrar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setCreatePrivacy('PUBLIC')
+                  setModal('create')
+                }}
+              >
+                Novo grupo
+              </Button>
+            </div>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {groups.length === 0 ? (
-              <EmptyState title="Nenhum grupo publico" description="Crie o primeiro grupo desta cidade." />
+
+          <div className="mb-4 grid grid-cols-2 rounded-lg border border-line bg-surface-muted p-1">
+            <TabButton active={activeTab === 'PUBLIC'} onClick={() => setActiveTab('PUBLIC')}>
+              Publicos
+            </TabButton>
+            <TabButton active={activeTab === 'PRIVATE'} onClick={() => setActiveTab('PRIVATE')}>
+              Privados
+            </TabButton>
+          </div>
+
+          <div className="grid gap-3">
+            {visibleGroups.length === 0 ? (
+              <EmptyState
+                title={activeTab === 'PRIVATE' ? 'Nenhum grupo privado' : 'Nenhum grupo publico'}
+                description="Crie um grupo ou entre usando nome e senha."
+              />
             ) : (
-              groups.map((group) => (
-                <article
+              visibleGroups.map((group) => (
+                <GroupListItem
                   key={group.id}
-                  className="grid gap-4 rounded-lg border border-line bg-surface p-4"
-                >
-                  <div>
-                    <p className="mb-2 text-xs font-black uppercase text-coral">
-                      {group.privacy === 'PRIVATE' ? 'Privado' : 'Publico'}
-                    </p>
-                    <h2 className="text-lg font-black">{group.name}</h2>
-                    <p className="mt-2 text-sm text-muted">{group.description || 'Grupo sem descricao.'}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="rounded-lg border border-line p-3 text-sm">
-                      <strong className="block text-lg">{group.membersCount}</strong>
-                      membros
-                    </span>
-                    <span className="rounded-lg border border-line p-3 text-sm">
-                      <strong className="block text-lg">{group.todayVotesCount}</strong>
-                      votos hoje
-                    </span>
-                  </div>
-                  <Button type="button" onClick={() => joinMutation.mutate(group.id)}>
-                    Entrar
-                  </Button>
-                </article>
+                  group={group}
+                  selected={group.id === selectedGroupId}
+                  onSelect={() => setSelectedGroupId(group.id)}
+                />
               ))
             )}
           </div>
         </Panel>
-        <div className="grid gap-4">
+
+        {selectedGroup ? (
+          <GroupDetail
+            group={selectedGroup}
+            onAccept={(username) => acceptMutation.mutate({ groupId: selectedGroup.id, username })}
+            onInvite={(username) => inviteMutation.mutate({ groupId: selectedGroup.id, username })}
+            onRemove={(username) => removeMutation.mutate({ groupId: selectedGroup.id, username })}
+          />
+        ) : (
           <Panel>
-            <h2 className="mb-4 text-lg font-black">Novo grupo</h2>
-            <form className="grid gap-3" onSubmit={submit}>
-              <Input label="Nome" maxLength={80} minLength={2} name="name" required />
-              <label className="grid gap-1.5 text-xs font-bold text-muted">
-                Descricao
-                <textarea
-                  className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-teal"
-                  maxLength={280}
-                  name="description"
-                  rows={4}
-                />
-              </label>
-              <label className="grid gap-1.5 text-xs font-bold text-muted">
-                Privacidade
-                <select
-                  className="min-h-10 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-teal"
-                  name="privacy"
-                >
-                  <option value="PUBLIC">Publico</option>
-                  <option value="PRIVATE">Privado</option>
-                </select>
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input label="Cidade" name="city" />
-                <Input label="Estado" name="state" />
-              </div>
-              <Button type="submit">Criar grupo</Button>
-            </form>
+            <EmptyState
+              title="Abra um grupo"
+              description="Selecione um grupo seu para ver membros, aceitar pedidos ou convidar amigos."
+            />
           </Panel>
-          <Panel>
-            <h2 className="mb-2 text-lg font-black">Aprovar membro</h2>
-            <p className="mb-4 text-sm text-muted">
-              Apenas o lider do grupo consegue aprovar solicitacoes privadas.
-            </p>
-            <form className="grid gap-3" onSubmit={submitAcceptance}>
-              <Input label="PublicId do grupo" name="groupPublicId" required />
-              <Input label="PublicId do usuario" name="userPublicId" required />
-              <Button type="submit" variant="secondary">
-                Aprovar membro
-              </Button>
-            </form>
-          </Panel>
-        </div>
+        )}
       </section>
+
+      {modal === 'create' && (
+        <Modal title="Novo grupo" onClose={() => setModal(null)}>
+          <form className="grid gap-3" onSubmit={submitCreate}>
+            <Input label="Nome" maxLength={80} minLength={2} name="name" required />
+            <label className="grid gap-1.5 text-xs font-bold text-muted">
+              Descricao
+              <textarea
+                className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-teal"
+                maxLength={280}
+                name="description"
+                rows={4}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-bold text-muted">
+              <span>
+                Privacidade <span className="text-teal">*</span>
+              </span>
+              <select
+                className="min-h-10 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-teal"
+                name="privacy"
+                required
+                value={createPrivacy}
+                onChange={(event) => setCreatePrivacy(event.currentTarget.value as GroupTab)}
+              >
+                <option value="PUBLIC">Publico</option>
+                <option value="PRIVATE">Privado</option>
+              </select>
+            </label>
+            {createPrivacy === 'PRIVATE' && (
+              <Input label="Senha" minLength={4} name="password" required type="password" />
+            )}
+            <Button disabled={createMutation.isPending} type="submit">
+              Criar grupo
+            </Button>
+          </form>
+        </Modal>
+      )}
+
+      {modal === 'join' && (
+        <Modal title="Entrar em grupo" onClose={() => setModal(null)}>
+          <form className="grid gap-3" onSubmit={submitJoin}>
+            <Input label="Nome do grupo" name="name" required />
+            <Input label="Senha" name="password" type="password" />
+            <Button disabled={joinMutation.isPending} type="submit" variant="secondary">
+              Entrar
+            </Button>
+          </form>
+        </Modal>
+      )}
     </>
+  )
+}
+
+function TabButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean
+  children: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      className={`min-h-10 rounded-md px-3 text-sm font-black transition ${
+        active ? 'bg-surface text-teal shadow-sm' : 'text-muted hover:bg-surface'
+      }`}
+      type="button"
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  )
+}
+
+function GroupListItem({
+  group,
+  onSelect,
+  selected,
+}: {
+  group: Group | MyGroup
+  onSelect: () => void
+  selected: boolean
+}) {
+  const canOpen = 'members' in group
+
+  return (
+    <button
+      className={`grid gap-3 rounded-lg border p-4 text-left transition ${
+        selected ? 'border-teal bg-teal-soft' : 'border-line bg-surface hover:bg-teal-soft'
+      }`}
+      type="button"
+      onClick={onSelect}
+    >
+      <div>
+        <p className="mb-1 text-xs font-black uppercase text-teal">
+          {group.privacy === 'PRIVATE' ? 'Privado' : 'Publico'}
+          {canOpen && ' · meu grupo'}
+        </p>
+        <h2 className="text-lg font-black">{group.name}</h2>
+        <p className="mt-1 text-sm text-muted">{group.description || 'Grupo sem descricao.'}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Metric label="membros" value={group.membersCount ?? 0} />
+        <Metric label="votos hoje" value={group.todayVotesCount ?? 0} />
+      </div>
+    </button>
+  )
+}
+
+function GroupDetail({
+  group,
+  onAccept,
+  onInvite,
+  onRemove,
+}: {
+  group: MyGroup
+  onAccept: (username: string) => void
+  onInvite: (username: string) => void
+  onRemove: (username: string) => void
+}) {
+  const canManage = group.myRole === 'OWNER' && group.myStatus === 'ACTIVE'
+  const pendingMembers = group.members.filter((member) => member.status === 'PENDING')
+  const activeMembers = group.members.filter((member) => member.status === 'ACTIVE')
+
+  function submitInvite(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = event.currentTarget
+    const username = String(new FormData(form).get('username') || '').replace(/^@/, '')
+
+    if (username) {
+      onInvite(username)
+      form.reset()
+    }
+  }
+
+  return (
+    <Panel>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="mb-2 text-xs font-black uppercase text-teal">
+            {group.privacy === 'PRIVATE' ? 'Privado' : 'Publico'} · {group.myRole}
+          </p>
+          <h2 className="text-2xl font-black">{group.name}</h2>
+          <p className="mt-2 text-sm text-muted">{group.description || 'Grupo sem descricao.'}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Metric label="membros" value={group.membersCount ?? activeMembers.length} />
+          <Metric label="votos hoje" value={group.todayVotesCount ?? 0} />
+        </div>
+      </div>
+
+      {canManage && (
+        <form className="mb-5 grid gap-2 sm:grid-cols-[1fr_auto]" onSubmit={submitInvite}>
+          <Input label="Convidar por username" name="username" placeholder="amigo_username" required />
+          <Button className="self-end" type="submit" variant="secondary">
+            <UserPlus size={17} />
+            Convidar
+          </Button>
+        </form>
+      )}
+
+      <div className="grid gap-5">
+        {canManage && pendingMembers.length > 0 && (
+          <MemberSection
+            members={pendingMembers}
+            title="Pedidos pendentes"
+            onAccept={onAccept}
+            onRemove={onRemove}
+          />
+        )}
+
+        <MemberSection
+          members={activeMembers}
+          title="Membros"
+          onRemove={canManage ? onRemove : undefined}
+        />
+      </div>
+    </Panel>
+  )
+}
+
+function MemberSection({
+  members,
+  onAccept,
+  onRemove,
+  title,
+}: {
+  members: MyGroup['members']
+  onAccept?: (username: string) => void
+  onRemove?: (username: string) => void
+  title: string
+}) {
+  return (
+    <div>
+      <h3 className="mb-2 text-sm font-black uppercase text-muted">{title}</h3>
+      <div className="grid gap-2 md:grid-cols-2">
+        {members.length === 0 ? (
+          <EmptyState title="Nada aqui" description="Quando houver membros, eles aparecem nesta area." />
+        ) : (
+          members.map((member) => (
+            <div
+              key={member.user.publicId}
+              className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-line p-3"
+            >
+              <span className="min-w-0">
+                <strong className="block truncate text-sm">{member.user.name}</strong>
+                <small className="text-teal">@{member.user.username}</small>
+              </span>
+              <span className="inline-flex gap-2">
+                {onAccept && (
+                  <Button
+                    className="size-9 p-0"
+                    type="button"
+                    variant="secondary"
+                    onClick={() => onAccept(member.user.username)}
+                  >
+                    <Check size={16} />
+                  </Button>
+                )}
+                {onRemove && member.role !== 'OWNER' && (
+                  <Button
+                    className="size-9 p-0"
+                    type="button"
+                    variant="danger"
+                    onClick={() => onRemove(member.user.username)}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                )}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function Modal({
+  children,
+  onClose,
+  title,
+}: {
+  children: React.ReactNode
+  onClose: () => void
+  title: string
+}) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/55 px-4 py-6 backdrop-blur-sm">
+      <section className="grid w-full max-w-lg gap-4 rounded-2xl border border-line bg-surface p-5 text-ink shadow-panel">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-black">{title}</h2>
+          <Button className="size-12 p-0" type="button" variant="ghost" onClick={onClose}>
+            <X size={26} strokeWidth={2.6} />
+          </Button>
+        </div>
+        {children}
+      </section>
+    </div>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <span className="rounded-lg border border-line p-3 text-sm">
+      <strong className="block text-lg">{value}</strong>
+      {label}
+    </span>
   )
 }

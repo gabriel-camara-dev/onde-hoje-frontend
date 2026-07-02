@@ -31,7 +31,7 @@ export function useAuth() {
       reset()
     } catch {
       setError('root', {
-        message: 'Email ou senha incorretos',
+        message: 'Email, username ou senha incorretos',
       })
     }
   }
