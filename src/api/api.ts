@@ -4,6 +4,18 @@ import { useUserStore } from '../stores/userStore'
 
 export const API_BASE_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:3333'
 
+export function resolveApiUrl(url?: string | null) {
+  if (!url) {
+    return null
+  }
+
+  if (/^https?:\/\//i.test(url)) {
+    return url
+  }
+
+  return `${API_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`
+}
+
 export const axiosPublic = axios.create({
   baseURL: API_BASE_URL,
 })

@@ -10,7 +10,7 @@ import { useUserStore } from '../../stores/userStore'
 
 export default function AdminPage() {
   const user = useUserStore((state) => state.user)
-  const [userFilters, setUserFilters] = useState({ name: '', username: '', email: '' })
+  const [userFilters, setUserFilters] = useState({ name: '', email: '' })
   const dashboardQuery = useQuery({
     enabled: Boolean(user),
     queryKey: ['admin-dashboard'],
@@ -27,7 +27,6 @@ export default function AdminPage() {
     const form = new FormData(event.currentTarget)
     setUserFilters({
       name: String(form.get('name') || ''),
-      username: String(form.get('username') || ''),
       email: String(form.get('email') || ''),
     })
   }
@@ -84,9 +83,8 @@ export default function AdminPage() {
                     {usersQuery.data?.totalCount ?? 0} encontrados
                   </p>
                 </div>
-                <form className="grid gap-2 md:grid-cols-4" onSubmit={filterUsers}>
+                <form className="grid gap-2 md:grid-cols-3" onSubmit={filterUsers}>
                   <Input label="Nome" name="name" />
-                  <Input label="Username" name="username" />
                   <Input label="Email" name="email" />
                   <Button className="self-end" type="submit">
                     Buscar
@@ -94,11 +92,10 @@ export default function AdminPage() {
                 </form>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[680px] border-separate border-spacing-y-2 text-left text-sm">
+                <table className="w-full min-w-[560px] border-separate border-spacing-y-2 text-left text-sm">
                   <thead className="text-xs uppercase text-muted">
                     <tr>
                       <th className="px-3">Nome</th>
-                      <th className="px-3">Username</th>
                       <th className="px-3">Email</th>
                       <th className="px-3">Role</th>
                     </tr>
@@ -107,7 +104,6 @@ export default function AdminPage() {
                     {(usersQuery.data?.data ?? []).map((listedUser) => (
                       <tr key={listedUser.id} className="bg-teal-soft">
                         <td className="rounded-l-lg px-3 py-3 font-bold">{listedUser.name}</td>
-                        <td className="px-3 py-3">@{listedUser.username}</td>
                         <td className="px-3 py-3">{listedUser.email}</td>
                         <td className="rounded-r-lg px-3 py-3 font-black text-teal">
                           {listedUser.role}

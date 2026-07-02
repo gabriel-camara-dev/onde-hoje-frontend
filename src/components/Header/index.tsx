@@ -1,6 +1,7 @@
 import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { resolveApiUrl } from '../../api/api'
 import { useUserStore } from '../../stores/userStore'
 import { AppMenu } from '../AppMenu'
 import { ThemeToggle } from '../ThemeToggle'
@@ -51,6 +52,7 @@ export default function Header() {
 }
 
 function Avatar({ name, src }: { name: string; src?: string | null }) {
+  const avatarSrc = resolveApiUrl(src)
   const initials = name
     .split(' ')
     .filter(Boolean)
@@ -58,13 +60,13 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
     .map((part) => part[0]?.toUpperCase())
     .join('')
 
-  if (src) {
+  if (avatarSrc) {
     return (
       <img
         alt=""
         className="size-9 rounded-xl border border-line object-cover"
         referrerPolicy="no-referrer"
-        src={src}
+        src={avatarSrc}
       />
     )
   }

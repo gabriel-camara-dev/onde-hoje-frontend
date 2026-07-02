@@ -3,9 +3,12 @@ import { CalendarDays, MapPin, Navigation, TrendingUp, Vote, X } from 'lucide-re
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { resolveApiUrl } from '../../api/api'
 import {
+  cancelVoteForPlace,
   createPlace,
   getTodayMap,
+  listMyVotes,
   listPublicGroups,
   type MapFilters,
   voteForPlace,
@@ -13,15 +16,18 @@ import {
 import type { MapPlace } from '../../@types/OndeHoje'
 import { GooglePlacesMap, type GooglePlaceDraft } from '../../components/GooglePlacesMap'
 import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
 import { StatusBanner } from '../../components/ui/StatusBanner'
 import { useUserStore } from '../../stores/userStore'
 
-const today = new Date().toISOString().slice(0, 10)
+const today = formatLocalDate(new Date())
+const maxVoteDay = formatLocalDate(addMonths(new Date(), 1))
 
 export default function Home() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const accessToken = useUserStore((state) => state.accessToken)
+  const user = useUserStore((state) => state.user)
   const [filters, setFilters] = useState<MapFilters>({ city: '', day: today, q: '' })
   const [selectedPlace, setSelectedPlace] = useState<MapPlace>()
   const [draftPlace, setDraftPlace] = useState<GooglePlaceDraft>()
@@ -35,19 +41,37 @@ export default function Home() {
     queryKey: ['public-groups', filters.city],
     queryFn: () => listPublicGroups(filters.city),
   })
+  const myVotesQuery = useQuery({
+    enabled: Boolean(accessToken),
+    queryKey: ['my-votes'],
+    queryFn: listMyVotes,
+  })
 
   const places = useMemo(() => mapQuery.data ?? [], [mapQuery.data])
-  const activePlace = selectedPlace ?? places[0]
+  const selectedPlaceForDay = selectedPlace
+    ? (places.find((place) => place.id === selectedPlace.id) ?? {
+        ...selectedPlace,
+        voteCount: 0,
+        voters: [],
+      })
+    : undefined
+  const activePlace = selectedPlaceForDay ?? places[0]
 
   const voteMutation = useMutation({
-    mutationFn: async (input: { placeId: string; note?: string; groupPublicId?: string }) => {
+    mutationFn: async (input: {
+      day: string
+      placeId: string
+      note?: string
+      groupPublicId?: string
+    }) => {
       await voteForPlace(input.placeId, {
-        day: filters.day,
+        day: input.day,
         groupPublicId: input.groupPublicId,
         note: input.note,
       })
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, input) => {
+      setFilters((currentFilters) => ({ ...currentFilters, day: input.day }))
       setDraftPlace(undefined)
       setSelectedPlace(undefined)
       toast.success('Voto registrado no mapa.')
@@ -60,21 +84,41 @@ export default function Home() {
 
   const createAndVoteMutation = useMutation({
     mutationFn: async (input: {
+      day: string
       draft: GooglePlaceDraft
       note?: string
       groupPublicId?: string
     }) => {
       const place = await createPlace(input.draft)
       await voteForPlace(place.id, {
-        day: filters.day,
+        day: input.day,
         groupPublicId: input.groupPublicId,
         note: input.note,
       })
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, input) => {
+      setFilters((currentFilters) => ({ ...currentFilters, day: input.day }))
       setDraftPlace(undefined)
       setSelectedPlace(undefined)
       toast.success('Lugar salvo e voto registrado.')
+      await refreshVotingData()
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
+
+  const cancelVoteMutation = useMutation({
+    mutationFn: async (input: { day: string; placeId: string; groupPublicId?: string }) => {
+      await cancelVoteForPlace(input.placeId, {
+        day: input.day,
+        groupPublicId: input.groupPublicId,
+      })
+    },
+    onSuccess: async (_data, input) => {
+      setFilters((currentFilters) => ({ ...currentFilters, day: input.day }))
+      setSelectedPlace(undefined)
+      toast.success('Voto removido.')
       await refreshVotingData()
     },
     onError: (error) => {
@@ -101,12 +145,35 @@ export default function Home() {
     return true
   }
 
+  function voteDayFrom(form: FormData) {
+    const day = String(form.get('day') || '')
+
+    if (!day) {
+      toast.error('Escolha o dia do voto.')
+      return null
+    }
+
+    if (!isAllowedVoteDay(day)) {
+      toast.error('Escolha uma data entre hoje e ate 1 mes no futuro.')
+      return null
+    }
+
+    return day
+  }
+
   function voteExisting(form: FormData) {
     if (!activePlace || !requireAuth()) {
       return
     }
 
+    const day = voteDayFrom(form)
+
+    if (!day) {
+      return
+    }
+
     voteMutation.mutate({
+      day,
       placeId: activePlace.id,
       groupPublicId: String(form.get('groupPublicId') || '') || undefined,
       note: String(form.get('note') || '') || undefined,
@@ -118,12 +185,66 @@ export default function Home() {
       return
     }
 
+    const day = voteDayFrom(form)
+
+    if (!day) {
+      return
+    }
+
     createAndVoteMutation.mutate({
+      day,
       draft: draftPlace,
       groupPublicId: String(form.get('groupPublicId') || '') || undefined,
       note: String(form.get('note') || '') || undefined,
     })
   }
+
+  function cancelExistingVote(form: FormData, groupPublicId?: string) {
+    if (!activePlace || !requireAuth()) {
+      return
+    }
+
+    const day = voteDayFrom(form)
+
+    if (!day) {
+      return
+    }
+
+    cancelVoteMutation.mutate({
+      day,
+      placeId: activePlace.id,
+      groupPublicId: groupPublicId ?? (String(form.get('groupPublicId') || '') || undefined),
+    })
+  }
+
+  function changeMapDay(day: string) {
+    if (!day) {
+      return
+    }
+
+    if (!isAllowedVoteDay(day)) {
+      toast.error('Escolha uma data entre hoje e ate 1 mes no futuro.')
+      return
+    }
+
+    setFilters((currentFilters) => ({ ...currentFilters, day }))
+  }
+
+  const selectedPlaceUserVote = myVotesQuery.data?.find(
+    (vote) => vote.day === filters.day && vote.place.id === selectedPlaceForDay?.id
+  )
+  const activePlaceUserVote = myVotesQuery.data?.find(
+    (vote) => vote.day === filters.day && vote.place.id === activePlace?.id
+  )
+  const selectedPlaceHasUserVote = Boolean(
+    selectedPlaceUserVote ??
+    selectedPlaceForDay?.voters.some((voter) => voter.publicId === user?.id)
+  )
+  const activePlaceHasUserVote = Boolean(
+    activePlaceUserVote ?? activePlace?.voters.some((voter) => voter.publicId === user?.id)
+  )
+  const userVotesForSelectedDay =
+    myVotesQuery.data?.filter((vote) => vote.day === filters.day).length ?? 0
 
   return (
     <>
@@ -142,10 +263,10 @@ export default function Home() {
                     {draftPlace ? 'Novo ponto do mapa' : 'Lugar existente'}
                   </p>
                   <h2 className="mt-1 text-2xl font-black">
-                    {draftPlace?.name ?? selectedPlace?.name}
+                    {draftPlace?.name ?? selectedPlaceForDay?.name}
                   </h2>
                   <p className="mt-1 text-sm text-muted">
-                    {draftPlace?.formattedAddress ?? selectedPlace?.formattedAddress}
+                    {draftPlace?.formattedAddress ?? selectedPlaceForDay?.formattedAddress}
                   </p>
                 </div>
                 <Button
@@ -166,12 +287,25 @@ export default function Home() {
                   : 'Esse lugar já existe no mapa. Você pode votar nele agora ou abrir outro marcador para trocar de seleção.'}
               </div>
 
+              {selectedPlaceForDay && <VotersList voters={selectedPlaceForDay.voters} />}
+
               <VotePanel
                 groups={groupsQuery.data ?? []}
                 isNewPlace={Boolean(draftPlace)}
-                placeName={draftPlace?.name ?? selectedPlace?.name}
-                subtitle={draftPlace?.formattedAddress ?? selectedPlace?.formattedAddress}
-                voteCount={selectedPlace?.voteCount}
+                placeName={draftPlace?.name ?? selectedPlaceForDay?.name}
+                subtitle={draftPlace?.formattedAddress ?? selectedPlaceForDay?.formattedAddress}
+                voteCount={selectedPlaceForDay?.voteCount}
+                hasUserVote={selectedPlaceHasUserVote}
+                isPending={
+                  voteMutation.isPending ||
+                  createAndVoteMutation.isPending ||
+                  cancelVoteMutation.isPending
+                }
+                selectedDay={filters.day}
+                maxDay={maxVoteDay}
+                minDay={today}
+                onDayChange={changeMapDay}
+                onCancelVote={(form) => cancelExistingVote(form, selectedPlaceUserVote?.group?.id)}
                 onSubmit={draftPlace ? voteDraft : voteExisting}
               />
             </section>
@@ -183,8 +317,12 @@ export default function Home() {
         <div className="grid gap-4">
           <GooglePlacesMap
             city={filters.city}
+            maxMapDay={maxVoteDay}
+            mapDay={filters.day}
+            minMapDay={today}
             places={places}
             selectedPlaceId={selectedPlace?.id}
+            onMapDayChange={changeMapDay}
             onLocationResolved={(location) => {
               setCurrentAddress(location.address)
 
@@ -211,13 +349,16 @@ export default function Home() {
             error={
               mapQuery.error?.message ??
               voteMutation.error?.message ??
-              createAndVoteMutation.error?.message
+              createAndVoteMutation.error?.message ??
+              cancelVoteMutation.error?.message
             }
             loading={
               mapQuery.isLoading ||
               groupsQuery.isLoading ||
+              myVotesQuery.isLoading ||
               voteMutation.isPending ||
-              createAndVoteMutation.isPending
+              createAndVoteMutation.isPending ||
+              cancelVoteMutation.isPending
             }
           />
 
@@ -240,11 +381,7 @@ export default function Home() {
               </div>
             )}
             <div className="mt-5 grid grid-cols-3 gap-2">
-              <Metric
-                icon={Vote}
-                label="votos"
-                value={places.reduce((sum, place) => sum + place.voteCount, 0)}
-              />
+              <Metric icon={Vote} label="meus votos" value={userVotesForSelectedDay} />
               <Metric icon={MapPin} label="lugares" value={places.length} />
               <Metric icon={CalendarDays} label="limite" value={3} />
             </div>
@@ -256,6 +393,17 @@ export default function Home() {
               placeName={activePlace?.name}
               subtitle={activePlace?.formattedAddress}
               voteCount={activePlace?.voteCount}
+              hasUserVote={activePlaceHasUserVote}
+              isPending={
+                voteMutation.isPending ||
+                createAndVoteMutation.isPending ||
+                cancelVoteMutation.isPending
+              }
+              selectedDay={filters.day}
+              maxDay={maxVoteDay}
+              minDay={today}
+              onDayChange={changeMapDay}
+              onCancelVote={(form) => cancelExistingVote(form, activePlaceUserVote?.group?.id)}
               onSubmit={voteExisting}
             />
           )}
@@ -269,7 +417,7 @@ export default function Home() {
               <span className="text-sm font-bold text-muted">{filters.day}</span>
             </div>
             <div className="grid gap-2">
-              {places.slice(0, 8).map((place, index) => (
+              {places.slice(0, 3).map((place, index) => (
                 <button
                   key={place.id}
                   className="grid grid-cols-[32px_1fr_auto] items-center gap-3 rounded-2xl border border-line p-3 text-left transition hover:bg-teal-soft"
@@ -286,9 +434,7 @@ export default function Home() {
                     <strong className="block text-sm">{place.name}</strong>
                     <small className="text-muted">{place.city ?? 'Sem cidade'}</small>
                   </span>
-                  <em className="text-sm font-black not-italic text-teal">
-                    {place.voteCount}
-                  </em>
+                  <em className="text-sm font-black not-italic text-teal">{place.voteCount}</em>
                 </button>
               ))}
             </div>
@@ -301,16 +447,30 @@ export default function Home() {
 
 function VotePanel({
   groups,
+  hasUserVote,
   isNewPlace,
+  isPending,
+  maxDay,
+  minDay,
+  onDayChange,
+  onCancelVote,
   onSubmit,
   placeName,
+  selectedDay,
   subtitle,
   voteCount,
 }: {
   groups: Array<{ id: string; name: string }>
+  hasUserVote?: boolean
   isNewPlace?: boolean
+  isPending?: boolean
+  maxDay: string
+  minDay: string
+  onDayChange: (day: string) => void
+  onCancelVote: (form: FormData) => void
   onSubmit: (form: FormData) => void
   placeName?: string
+  selectedDay: string
   subtitle?: string
   voteCount?: number
 }) {
@@ -323,7 +483,7 @@ function VotePanel({
       {subtitle && <p className="mt-2 text-sm text-muted">{subtitle}</p>}
       {voteCount !== undefined && (
         <span className="mt-3 inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-black text-teal">
-          {voteCount} votos hoje
+          {voteCount} votos em {formatDateLabel(selectedDay)}
         </span>
       )}
       <form
@@ -333,6 +493,16 @@ function VotePanel({
           onSubmit(new FormData(event.currentTarget))
         }}
       >
+        <Input
+          label="Dia"
+          max={maxDay}
+          min={minDay}
+          name="day"
+          required
+          type="date"
+          value={selectedDay}
+          onChange={(event) => onDayChange(event.currentTarget.value)}
+        />
         <label className="grid gap-1.5 text-xs font-bold text-muted">
           Grupo
           <select
@@ -356,12 +526,67 @@ function VotePanel({
             rows={3}
           />
         </label>
-        <Button disabled={!placeName} type="submit">
-          {isNewPlace ? 'Salvar e votar' : 'Votar aqui'}
-        </Button>
+        {hasUserVote && !isNewPlace ? (
+          <Button
+            disabled={!placeName || isPending}
+            type="button"
+            variant="danger"
+            onClick={(event) => onCancelVote(new FormData(event.currentTarget.form!))}
+          >
+            Tirar meu voto
+          </Button>
+        ) : (
+          <Button disabled={!placeName || isPending} type="submit">
+            {isNewPlace ? 'Salvar e votar' : 'Votar aqui'}
+          </Button>
+        )}
       </form>
     </section>
   )
+}
+
+function VotersList({ voters }: { voters: MapPlace['voters'] }) {
+  if (voters.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="rounded-3xl border border-line bg-surface p-4 shadow-panel">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-black uppercase text-teal">Quem votou aqui</h3>
+        <span className="rounded-full bg-teal-soft px-3 py-1 text-xs font-black text-teal">
+          {voters.length}
+        </span>
+      </div>
+      <div className="grid max-h-56 gap-2 overflow-y-auto pr-1">
+        {voters.map((voter) => (
+          <div
+            key={voter.publicId}
+            className="grid grid-cols-[44px_1fr] items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3"
+          >
+            <Avatar name={voter.name} src={voter.avatarUrl} />
+            <div className="min-w-0">
+              <strong className="block truncate text-sm">{voter.name}</strong>
+              {voter.note && <p className="mt-1 text-sm text-muted">{voter.note}</p>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function formatDateLabel(day: string) {
+  const [year, month, date] = day.split('-').map(Number)
+
+  if (!year || !month || !date) {
+    return day
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+  }).format(new Date(year, month - 1, date))
 }
 
 function Metric({ icon: Icon, label, value }: { icon: typeof Vote; label: string; value: number }) {
@@ -372,4 +597,49 @@ function Metric({ icon: Icon, label, value }: { icon: typeof Vote; label: string
       <span className="text-xs text-muted">{label}</span>
     </div>
   )
+}
+
+function Avatar({ name, src }: { name: string; src?: string | null }) {
+  const avatarSrc = resolveApiUrl(src)
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+
+  if (avatarSrc) {
+    return (
+      <img
+        alt=""
+        className="size-11 rounded-2xl border border-line object-cover"
+        referrerPolicy="no-referrer"
+        src={avatarSrc}
+      />
+    )
+  }
+
+  return (
+    <span className="grid size-11 place-items-center rounded-2xl bg-teal text-xs font-black text-white">
+      {initials || 'U'}
+    </span>
+  )
+}
+
+function formatLocalDate(date: Date) {
+  return new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
+
+function addMonths(date: Date, months: number) {
+  const nextDate = new Date(date)
+  nextDate.setMonth(nextDate.getMonth() + months)
+  return nextDate
+}
+
+function isAllowedVoteDay(day: string) {
+  return day >= today && day <= maxVoteDay
 }

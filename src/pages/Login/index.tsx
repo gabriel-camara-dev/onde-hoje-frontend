@@ -18,9 +18,7 @@ export function Login() {
     mutationFn: (form: FormData) =>
       registerUser({
         name: String(form.get('name')),
-        username: String(form.get('username')),
         email: String(form.get('email')),
-        cpf: String(form.get('cpf')),
         password: String(form.get('password')),
       }),
   })
@@ -91,7 +89,7 @@ export function Login() {
             loading={registerMutation.isPending}
             message={
               registerMutation.isSuccess
-                ? 'Conta criada. Entre com seu identificador e senha.'
+                ? 'Conta criada. Entre com seu email e senha.'
                 : undefined
             }
           />
@@ -121,18 +119,10 @@ export function Login() {
               <p className="mb-2 text-xs font-black uppercase text-teal">Cadastro local</p>
               <h2 className="mb-2 text-2xl font-black">Criar conta</h2>
               <p className="mb-4 text-sm text-muted">
-                Depois de criar sua conta, use username, email ou CPF para entrar.
+                Depois de criar sua conta, use seu email para entrar.
               </p>
               <form className="grid gap-3" onSubmit={handleRegister}>
                 <Input label="Nome" minLength={4} name="name" placeholder="Seu nome" required />
-                <Input
-                  label="Username"
-                  maxLength={60}
-                  minLength={3}
-                  name="username"
-                  placeholder="seu_usuario"
-                  required
-                />
                 <Input
                   label="Email"
                   name="email"
@@ -140,7 +130,6 @@ export function Login() {
                   required
                   type="email"
                 />
-                <Input label="CPF" name="cpf" placeholder="00000000000" required />
                 <Input
                   label="Senha"
                   minLength={6}

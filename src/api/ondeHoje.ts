@@ -81,9 +81,7 @@ export async function authenticate(body: { login: string; password: string }) {
 
 export async function registerUser(body: {
   name: string
-  username: string
   email: string
-  cpf: string
   password: string
 }) {
   const response = await axiosPublic.post<User>('/users', body)
@@ -96,6 +94,15 @@ export async function voteForPlace(
   body: { day?: string; groupPublicId?: string; note?: string }
 ) {
   const response = await axiosPrivate.post(`/places/${placePublicId}/votes`, body)
+
+  return response.data
+}
+
+export async function cancelVoteForPlace(
+  placePublicId: string,
+  body: { day?: string; groupPublicId?: string }
+) {
+  const response = await axiosPrivate.delete(`/places/${placePublicId}/votes`, { data: body })
 
   return response.data
 }
@@ -179,17 +186,13 @@ export async function acceptFriendship(userPublicId: string) {
 export async function listUsers(params: {
   page?: number
   name?: string
-  username?: string
   email?: string
-  cpf?: string
 }) {
   const response = await axiosPrivate.get<ListUsersResponse>('/users', {
     params: compactParams({
       page: params.page ?? 1,
       name: params.name,
-      username: params.username,
       email: params.email,
-      cpf: params.cpf,
     }),
   })
 
@@ -200,9 +203,7 @@ export async function updateUser(
   publicId: string,
   body: Partial<{
     name: string
-    username: string
     email: string
-    cpf: string
     password: string
   }>
 ) {

@@ -1,12 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { FormEvent } from 'react'
-import {
-  deleteUser,
-  listFriends,
-  listMyVotes,
-  updateUser,
-  uploadAvatar,
-} from '../../api/ondeHoje'
+import { useMutation } from '@tanstack/react-query'
+import type { ChangeEvent, FormEvent } from 'react'
+import { useRef } from 'react'
+import { Camera, Plus } from 'lucide-react'
+import { deleteUser, updateUser, uploadAvatar } from '../../api/ondeHoje'
+import { resolveApiUrl } from '../../api/api'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import { Panel } from '../../components/ui/Panel'
@@ -15,32 +12,24 @@ import { useAuth } from '../../hooks/useAuth'
 import { useUserStore } from '../../stores/userStore'
 
 export default function ProfilePage() {
-  const queryClient = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const user = useUserStore((state) => state.user)
   const updateStoredUser = useUserStore((state) => state.updateUser)
   const { logout } = useAuth()
 
-  const votesQuery = useQuery({
-    enabled: Boolean(user),
-    queryKey: ['my-votes'],
-    queryFn: listMyVotes,
-  })
-  const friendsQuery = useQuery({
-    enabled: Boolean(user),
-    queryKey: ['friends'],
-    queryFn: listFriends,
-  })
   const avatarMutation = useMutation({
     mutationFn: uploadAvatar,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-votes'] }),
+    onSuccess: (updatedUser) => {
+      if (updatedUser && typeof updatedUser === 'object') {
+        updateStoredUser(updatedUser)
+      }
+    },
   })
   const updateMutation = useMutation({
     mutationFn: (form: FormData) =>
       updateUser(user!.id, {
         name: String(form.get('name') || '') || undefined,
-        username: String(form.get('username') || '') || undefined,
         email: String(form.get('email') || '') || undefined,
-        cpf: String(form.get('cpf') || '') || undefined,
         password: String(form.get('password') || '') || undefined,
       }),
     onSuccess: (updatedUser) => updateStoredUser(updatedUser),
@@ -52,20 +41,23 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <Panel className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-black">Perfil</h1>
-        <p className="mt-2 text-sm text-muted">Entre para ver seu perfil e historico de votos.</p>
-      </Panel>
+      <section className="grid min-h-[calc(100vh-140px)] place-items-center px-4">
+        <Panel className="w-full max-w-xl text-center">
+          <h1 className="text-2xl font-black">Perfil</h1>
+          <p className="mt-2 text-sm text-muted">Entre para ver e editar suas informacoes.</p>
+        </Panel>
+      </section>
     )
   }
 
-  function handleAvatar(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const file = new FormData(event.currentTarget).get('file')
+  function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0]
 
-    if (file instanceof File && file.size > 0) {
+    if (file) {
       avatarMutation.mutate(file)
     }
+
+    event.currentTarget.value = ''
   }
 
   function handleUpdate(event: FormEvent<HTMLFormElement>) {
@@ -73,102 +65,101 @@ export default function ProfilePage() {
     updateMutation.mutate(new FormData(event.currentTarget))
   }
 
-  const votes = votesQuery.data ?? []
-  const friends = friendsQuery.data ?? []
+  const avatarSrc = resolveApiUrl(user.avatarUrl)
+  const initials = user.name
+    .split(' ')
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
 
   return (
-    <>
-      <StatusBanner
-        error={
-          votesQuery.error?.message ??
-          friendsQuery.error?.message ??
-          avatarMutation.error?.message ??
-          updateMutation.error?.message ??
-          deleteMutation.error?.message
-        }
-        loading={
-          votesQuery.isLoading ||
-          friendsQuery.isLoading ||
-          avatarMutation.isPending ||
-          updateMutation.isPending ||
-          deleteMutation.isPending
-        }
-        message={
-          avatarMutation.isSuccess
-            ? 'Foto atualizada.'
-            : updateMutation.isSuccess
-              ? 'Perfil atualizado.'
-              : undefined
-        }
-      />
-      <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
-        <Panel>
-          <p className="mb-2 text-xs font-black uppercase text-coral">Minha conta</p>
-          <h1 className="text-2xl font-black">{user.name}</h1>
-          <p className="mt-1 text-sm text-muted">{user.email}</p>
-          <div className="my-4 grid gap-2">
-            <Metric label="votos recentes" value={votes.length} />
-            <Metric label="amizades e pedidos" value={friends.length} />
+    <section className="grid min-h-[calc(100vh-140px)] place-items-center px-4 py-8">
+      <div className="w-full max-w-2xl">
+        <StatusBanner
+          error={
+            avatarMutation.error?.message ??
+            updateMutation.error?.message ??
+            deleteMutation.error?.message
+          }
+          loading={avatarMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
+          message={
+            avatarMutation.isSuccess
+              ? 'Foto atualizada.'
+              : updateMutation.isSuccess
+                ? 'Perfil atualizado.'
+                : undefined
+          }
+        />
+
+        <Panel className="text-center">
+          <p className="mb-2 text-xs font-black uppercase text-teal">Minha conta</p>
+          <h1 className="text-3xl font-black text-ink">Perfil</h1>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted">
+            Atualize suas informacoes publicas e a foto que aparece nos votos.
+          </p>
+
+          <div className="mt-8 flex justify-center">
+            <button
+              type="button"
+              className="group relative grid h-32 w-32 cursor-pointer place-items-center overflow-hidden rounded-full border-4 border-surface bg-contrast text-4xl font-black text-on-contrast shadow-[var(--shadow-panel)] outline-none ring-2 ring-line transition hover:scale-[1.02] hover:ring-teal focus-visible:ring-4 focus-visible:ring-teal"
+              aria-label="Alterar foto de perfil"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {avatarSrc ? (
+                <img
+                  src={avatarSrc}
+                  alt={`Foto de ${user.name}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span>{initials || <Camera size={36} />}</span>
+              )}
+              <span className="absolute inset-0 grid place-items-center bg-black/55 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-teal text-white shadow-lg">
+                  <Plus size={30} strokeWidth={3} />
+                </span>
+              </span>
+            </button>
+            <input
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/png,image/jpeg,image/webp"
+              name="file"
+              type="file"
+              onChange={handleAvatarChange}
+            />
           </div>
-          <form className="grid gap-3" onSubmit={handleAvatar}>
-            <Input accept="image/png,image/jpeg,image/webp" label="Foto de perfil" name="file" type="file" />
-            <Button type="submit" variant="secondary">
-              Atualizar foto
-            </Button>
-          </form>
-          <form className="mt-4 grid gap-3 border-t border-line pt-4" onSubmit={handleUpdate}>
-            <h2 className="font-black">Editar dados</h2>
-            <Input label="Nome" name="name" defaultValue={user.name} />
-            <Input label="Username" name="username" defaultValue={user.username} />
-            <Input label="Email" name="email" type="email" defaultValue={user.email} />
-            <Input label="CPF" name="cpf" />
+
+          <form className="mx-auto mt-8 grid max-w-xl gap-4 text-left" onSubmit={handleUpdate}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Nome" name="name" defaultValue={user.name} />
+              <Input label="Email" name="email" type="email" defaultValue={user.email} />
+            </div>
             <Input label="Nova senha" minLength={6} name="password" type="password" />
-            <Button type="submit" variant="secondary">
+            <Button type="submit">
               Salvar perfil
             </Button>
           </form>
-          <Button className="mt-3 w-full" type="button" variant="danger" onClick={logout}>
-            Sair
-          </Button>
-          <Button
-            className="mt-2 w-full"
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              if (window.confirm('Remover sua conta? Esta acao nao pode ser desfeita.')) {
-                deleteMutation.mutate()
-              }
-            }}
-          >
-            Remover conta
-          </Button>
-        </Panel>
-        <Panel>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-black">Historico de votos</h2>
-            <strong className="text-muted">{votes.length}</strong>
-          </div>
-          <div className="grid gap-2">
-            {votes.map((vote) => (
-              <article key={vote.id} className="rounded-lg border border-line p-3">
-                <span className="text-xs font-bold text-coral">{vote.day}</span>
-                <strong className="mt-1 block">{vote.place.name}</strong>
-                <small className="text-muted">{vote.group?.name ?? vote.scopeKey}</small>
-                {vote.note && <p className="mt-2 text-sm text-muted">{vote.note}</p>}
-              </article>
-            ))}
-          </div>
-        </Panel>
-      </section>
-    </>
-  )
-}
 
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <span className="rounded-lg border border-line p-3 text-sm">
-      <strong className="block text-2xl">{value}</strong>
-      {label}
-    </span>
+          <div className="mx-auto mt-4 grid max-w-xl gap-2 sm:grid-cols-2">
+            <Button type="button" variant="secondary" onClick={logout}>
+              Sair
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                if (window.confirm('Remover sua conta? Esta acao nao pode ser desfeita.')) {
+                  deleteMutation.mutate()
+                }
+              }}
+            >
+              Remover conta
+            </Button>
+          </div>
+        </Panel>
+      </div>
+    </section>
   )
 }

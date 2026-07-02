@@ -1,4 +1,4 @@
-import { LocateFixed, Search } from 'lucide-react'
+import { CalendarDays, LocateFixed, Search } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { MapPlace } from '../../@types/OndeHoje'
@@ -21,8 +21,12 @@ export type GooglePlaceDraft = {
 
 type GooglePlacesMapProps = {
   city?: string
+  maxMapDay: string
+  mapDay: string
+  minMapDay: string
   places: MapPlace[]
   selectedPlaceId?: string
+  onMapDayChange: (day: string) => void
   onDraftSelected: (place: GooglePlaceDraft) => void
   onLocationResolved?: (location: { address: string; city?: string; state?: string }) => void
   onPlaceSelected: (place: MapPlace) => void
@@ -35,6 +39,7 @@ type MapClickHandler = (
 ) => void
 
 const fallbackCenter = { lat: -23.55052, lng: -46.633308 }
+const existingVoteMarkerHitRadiusMeters = 6
 const googlePlaceFields = [
   'addressComponents',
   'displayName',
@@ -48,6 +53,10 @@ const googlePlaceFields = [
 
 export function GooglePlacesMap({
   city,
+  maxMapDay,
+  mapDay,
+  minMapDay,
+  onMapDayChange,
   onDraftSelected,
   onLocationResolved,
   onPlaceSelected,
@@ -67,8 +76,13 @@ export function GooglePlacesMap({
   const suppressNextMapClickRef = useRef(false)
   const hasTriedInitialLocationRef = useRef(false)
   const lastAppliedCityRef = useRef('')
+  const autocompleteSessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(
+    null
+  )
+  const autocompleteRequestIdRef = useRef(0)
   const [error, setError] = useState('')
   const [isSearching, setIsSearching] = useState(false)
+  const [suggestions, setSuggestions] = useState<google.maps.places.PlacePrediction[]>([])
 
   useEffect(() => {
     onDraftSelectedRef.current = onDraftSelected
@@ -228,6 +242,53 @@ export function GooglePlacesMap({
   function locateUser() {
     hasTriedInitialLocationRef.current = false
     centerMapOnUserLocation()
+  }
+
+  async function fetchAutocompleteSuggestions(query: string) {
+    const trimmedQuery = query.trim()
+    const map = mapRef.current
+
+    if (trimmedQuery.length < 2 || !map || !window.google?.maps?.places) {
+      setSuggestions([])
+      return
+    }
+
+    const requestId = autocompleteRequestIdRef.current + 1
+    autocompleteRequestIdRef.current = requestId
+
+    if (!autocompleteSessionTokenRef.current) {
+      autocompleteSessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken()
+    }
+
+    try {
+      const { suggestions: fetchedSuggestions } =
+        await window.google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          includedRegionCodes: ['br'],
+          input: trimmedQuery,
+          language: 'pt-BR',
+          locationBias: map.getBounds() ?? undefined,
+          origin: map.getCenter() ?? undefined,
+          region: 'BR',
+          sessionToken: autocompleteSessionTokenRef.current,
+        })
+
+      if (requestId !== autocompleteRequestIdRef.current) {
+        return
+      }
+
+      setSuggestions(
+        fetchedSuggestions
+          .map((suggestion) => suggestion.placePrediction)
+          .filter((prediction): prediction is google.maps.places.PlacePrediction =>
+            Boolean(prediction)
+          )
+          .slice(0, 5)
+      )
+    } catch {
+      if (requestId === autocompleteRequestIdRef.current) {
+        setSuggestions([])
+      }
+    }
   }
 
   async function searchByText(query: string) {
@@ -425,39 +486,124 @@ export function GooglePlacesMap({
       city: draft.city,
       state: draft.state,
     })
+    autocompleteSessionTokenRef.current = null
+    setSuggestions([])
+  }
+
+  async function selectAutocompleteSuggestion(prediction: google.maps.places.PlacePrediction) {
+    const map = mapRef.current
+
+    if (!map || !window.google?.maps) {
+      return
+    }
+
+    setIsSearching(true)
+    setError('')
+
+    try {
+      const place = prediction.toPlace()
+      const { place: hydratedPlace } = await place.fetchFields({ fields: googlePlaceFields })
+
+      if (!hydratedPlace.id || !hydratedPlace.displayName || !hydratedPlace.location) {
+        setError('O Google Maps encontrou o local, mas nao retornou coordenadas.')
+        return
+      }
+
+      if (searchInputRef.current) {
+        searchInputRef.current.value = hydratedPlace.displayName
+      }
+
+      selectGooglePlace(window.google, map, hydratedPlace, hydratedPlace.location)
+    } catch {
+      setError('Nao foi possivel abrir essa sugestao do Google Maps.')
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const firstSuggestion = suggestions[0]
+
+    if (firstSuggestion) {
+      selectAutocompleteSuggestion(firstSuggestion)
+      return
+    }
+
     searchByText(searchInputRef.current?.value ?? '')
   }
 
   return (
     <section className="relative min-h-[calc(100vh-188px)] overflow-hidden rounded-2xl border border-line bg-surface shadow-panel">
       <div ref={mapElementRef} className="absolute inset-0" />
-      <div className="absolute left-4 right-4 top-4 z-10 grid gap-2 md:left-6 md:right-auto md:w-[460px]">
+      <div className="absolute left-3 right-3 top-3 z-10 grid gap-2 sm:left-4 sm:right-4 sm:top-4 md:left-6 md:right-auto md:w-[720px]">
         <form
-          className="flex items-center gap-2 rounded-2xl border border-line bg-surface/95 p-2 shadow-panel backdrop-blur"
+          className="grid grid-cols-2 gap-2 rounded-2xl border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto]"
           onSubmit={submitSearch}
         >
-          <Search className="ml-2 text-muted" size={19} />
-          <input
-            ref={searchInputRef}
-            className="min-h-11 flex-1 bg-transparent px-2 text-sm font-semibold text-ink outline-none placeholder:text-muted/70"
-            placeholder="Busque um bar, restaurante, parque..."
-          />
-          <Button className="px-3" disabled={isSearching} type="submit" variant="secondary">
+          <label className="col-span-2 grid min-h-11 grid-cols-[20px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 text-xs font-bold text-muted sm:col-span-3 lg:col-span-1">
+            <CalendarDays size={17} />
+            <input
+              aria-label="Dia do mapa"
+              className="min-h-11 min-w-0 bg-transparent text-sm font-black text-ink outline-none"
+              max={maxMapDay}
+              min={minMapDay}
+              name="mapDay"
+              type="date"
+              value={mapDay}
+              onChange={(event) => onMapDayChange(event.currentTarget.value)}
+            />
+          </label>
+          <label className="col-span-2 grid min-w-0 grid-cols-[24px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 sm:col-span-1">
+            <Search className="text-muted" size={19} />
+            <input
+              ref={searchInputRef}
+              className="min-h-11 min-w-0 bg-transparent text-sm font-semibold text-ink outline-none placeholder:text-muted/70"
+              placeholder="Busque um lugar..."
+              onChange={(event) => fetchAutocompleteSuggestions(event.currentTarget.value)}
+              onFocus={(event) => fetchAutocompleteSuggestions(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  setSuggestions([])
+                }
+              }}
+            />
+          </label>
+          <Button className="min-h-11 px-4" disabled={isSearching} type="submit" variant="secondary">
             {isSearching ? 'Buscando...' : 'Buscar'}
           </Button>
           <Button
-            className="hidden px-3 md:inline-flex"
+            className="min-h-11 px-4"
             type="button"
             variant="secondary"
             onClick={locateUser}
           >
             <LocateFixed size={17} />
+            <span className="sm:hidden">Localizar</span>
           </Button>
         </form>
+        {suggestions.length > 0 && (
+          <div className="overflow-hidden rounded-2xl border border-line bg-surface/95 shadow-panel backdrop-blur">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.placeId}
+                className="grid w-full gap-0.5 border-b border-line px-4 py-3 text-left last:border-b-0 hover:bg-teal-soft"
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => selectAutocompleteSuggestion(suggestion)}
+              >
+                <strong className="truncate text-sm text-ink">
+                  {suggestion.mainText?.text ?? suggestion.text.text}
+                </strong>
+                {suggestion.secondaryText?.text && (
+                  <span className="truncate text-xs font-bold text-muted">
+                    {suggestion.secondaryText.text}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="rounded-xl border border-line bg-surface/90 px-4 py-2 text-xs font-bold text-muted shadow-panel backdrop-blur">
           Pesquise um local, uma cidade ou clique direto no mapa para selecionar um ponto.
         </div>
@@ -522,7 +668,7 @@ function findNearestMapPlace(latLng: google.maps.LatLng, places: MapPlace[]) {
       ),
       place,
     }))
-    .filter((item) => item.distance <= 80)
+    .filter((item) => item.distance <= existingVoteMarkerHitRadiusMeters)
     .sort((a, b) => a.distance - b.distance)[0]?.place
 }
 

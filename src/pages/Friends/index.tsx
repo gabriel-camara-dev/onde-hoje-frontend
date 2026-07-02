@@ -71,7 +71,7 @@ export default function FriendsPage() {
         <Panel>
           <h1 className="text-2xl font-black">Amizades</h1>
           <p className="mt-2 text-sm text-muted">
-            Solicite por publicId. O backend ainda nao expoe busca publica por username.
+            Solicite por publicId. O backend ainda nao expoe busca publica de usuarios.
           </p>
           <form className="mt-5 grid gap-3" onSubmit={submit}>
             <Input label="PublicId do usuario" name="publicId" required />
@@ -118,7 +118,6 @@ function FriendColumn({
           items.map((item) => (
             <article key={item.friend.publicId} className="rounded-lg border border-line p-3">
               <strong className="block">{item.friend.name}</strong>
-              <span className="text-sm text-muted">@{item.friend.username}</span>
               {action && actionLabel && (
                 <Button
                   className="mt-3 w-full"

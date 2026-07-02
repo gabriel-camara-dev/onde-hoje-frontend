@@ -17,10 +17,10 @@ export type Place = {
 export type MapPlace = Place & {
   voteCount: number
   voters: Array<{
-    id?: string
-    name?: string
-    username?: string
+    publicId: string
+    name: string
     avatarUrl?: string | null
+    note?: string | null
   }>
 }
 
@@ -56,7 +56,6 @@ export type FriendListItem = {
   friend: {
     publicId: string
     name: string
-    username: string
   }
 }
 
@@ -64,7 +63,6 @@ export type ListUsersResponse = {
   data: Array<{
     id: string
     name: string
-    username: string
     email: string
     role: 'DEFAULT' | 'ADMIN'
     avatarUrl?: string | null
