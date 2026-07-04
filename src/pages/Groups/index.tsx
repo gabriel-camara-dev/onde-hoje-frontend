@@ -1,4 +1,4 @@
-﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Clock3, Trash2, UserCheck, UserPlus, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
@@ -22,6 +22,7 @@ import {
 import Button from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import Input from '../../components/ui/Input'
+import Select from '../../components/ui/Select'
 import { Panel } from '../../components/ui/Panel'
 import { StatusBanner } from '../../components/ui/StatusBanner'
 import { loadGoogleMaps } from '../../lib/googleMaps'
@@ -384,21 +385,17 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
                 rows={4}
               />
             </label>
-            <label className="grid gap-1.5 text-xs font-medium text-muted">
-              <span>
-                Privacidade <span className="text-teal">*</span>
-              </span>
-              <select
-               
-                name="privacy"
-                required
-                value={createPrivacy}
-                onChange={(event) => setCreatePrivacy(event.currentTarget.value as GroupTab)}
-              >
-                <option value="PUBLIC">Publico</option>
-                <option value="PRIVATE">Privado</option>
-              </select>
-            </label>
+            <Select
+              label="Privacidade"
+              name="privacy"
+              options={[
+                { label: 'Publico', value: 'PUBLIC' },
+                { label: 'Privado', value: 'PRIVATE' },
+              ]}
+              required
+              value={createPrivacy}
+              onChange={(nextValue: string) => setCreatePrivacy(nextValue as GroupTab)}
+            />
             {createPrivacy === 'PRIVATE' && (
               <Input label="Senha" minLength={4} name="password" required type="password" />
             )}
@@ -722,7 +719,7 @@ function FriendshipButton({
     return (
       <Button
         aria-label={`${label} @${username}`}
-        className={`size-9 p-0 ${
+        className={`size-11 p-0 ${
           isAccepted
             ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-50 dark:border-emerald-900/70 dark:bg-emerald-950/35 dark:text-emerald-200'
             : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-200'
@@ -732,7 +729,7 @@ function FriendshipButton({
         type="button"
         variant="secondary"
       >
-        <Icon size={16} strokeWidth={2.5} />
+        <Icon size={21} strokeWidth={2.5} />
       </Button>
     )
   }
@@ -747,7 +744,7 @@ function FriendshipButton({
       variant="secondary"
       onClick={() => onRequestFriend(username)}
     >
-      <UserPlus size={16} strokeWidth={2.5} />
+      <UserPlus size={22} strokeWidth={2.6} />
     </Button>
   )
 }
@@ -875,6 +872,8 @@ function Metric({ label, value }: { label: string; value: number }) {
     </span>
   )
 }
+
+
 
 
 
