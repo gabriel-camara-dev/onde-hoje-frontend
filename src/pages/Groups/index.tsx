@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Clock3, Trash2, UserCheck, UserPlus, X } from 'lucide-react'
+import { Check, Clock3, Trash2, UserPlus, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -711,25 +711,21 @@ function FriendshipButton({
   requested?: boolean
   username: string
 }) {
-  if (friendship || requested) {
-    const isAccepted = friendship?.status === 'ACCEPTED'
-    const label = isAccepted ? 'Amigos' : 'Enviado'
-    const Icon = isAccepted ? UserCheck : Clock3
+  if (friendship?.status === 'ACCEPTED') {
+    return null
+  }
 
+  if (friendship || requested) {
     return (
       <Button
-        aria-label={`${label} @${username}`}
-        className={`size-11 p-0 ${
-          isAccepted
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-50 dark:border-emerald-900/70 dark:bg-emerald-950/35 dark:text-emerald-200'
-            : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-200'
-        }`}
+        aria-label={`Enviado @${username}`}
+        className="size-11 border-amber-200 bg-amber-50 p-0 text-amber-800 hover:bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-200"
         disabled
-        title={`${label} @${username}`}
+        title={`Enviado @${username}`}
         type="button"
         variant="secondary"
       >
-        <Icon size={21} strokeWidth={2.5} />
+        <Clock3 size={21} strokeWidth={2.5} />
       </Button>
     )
   }

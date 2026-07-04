@@ -3,7 +3,6 @@ import {
   Clock3,
   Navigation,
   TrendingUp,
-  UserCheck,
   UserPlus,
   Vote,
   X,
@@ -422,26 +421,24 @@ function FriendshipButton({
   onAddFriend: (username: string) => void
   username: string
 }) {
+  if (friendship?.status === 'ACCEPTED') {
+    return null
+  }
+
   if (friendship) {
-    const isAccepted = friendship.status === 'ACCEPTED'
     const isSent = friendship.status === 'PENDING' && friendship.direction === 'sent'
-    const label = isAccepted ? 'Amigos' : isSent ? 'Enviado' : 'Pendente'
-    const Icon = isAccepted ? UserCheck : Clock3
+    const label = isSent ? 'Enviado' : 'Pendente'
 
     return (
       <Button
         aria-label={`${label} @${username}`}
-        className={`h-11 min-w-11 px-3 ${
-          isAccepted
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-50 dark:border-emerald-900/70 dark:bg-emerald-950/35 dark:text-emerald-200'
-            : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-200'
-        }`}
+        className="h-11 min-w-11 border-amber-200 bg-amber-50 px-3 text-amber-800 hover:bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-200"
         disabled
         title={`${label} @${username}`}
         type="button"
         variant="secondary"
       >
-        <Icon size={19} strokeWidth={2.5} />
+        <Clock3 size={19} strokeWidth={2.5} />
         <span className="hidden sm:inline">{label}</span>
       </Button>
     )
