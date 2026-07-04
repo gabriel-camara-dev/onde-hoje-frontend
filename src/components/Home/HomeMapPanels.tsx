@@ -149,7 +149,7 @@ export function HomeSidebar({
   onSelectPlace,
 }: HomeSidebarProps) {
   return (
-    <aside className="grid content-start gap-3 p-3 md:pointer-events-none md:absolute md:right-4 md:top-4 md:z-20 md:w-[360px] md:p-0">
+    <aside className="grid content-start gap-3 p-3 md:pointer-events-none md:absolute md:right-4 md:top-4 md:z-20 md:w-[332px] md:p-0">
       <StatusBanner error={errors.find(Boolean)} loading={isLoading} />
 
       <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-3 text-ink shadow-panel backdrop-blur">
@@ -193,23 +193,23 @@ export function HomeSidebar({
         </div>
       </section>
 
-      <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-3 text-ink shadow-panel backdrop-blur">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="inline-flex items-center gap-2 text-base font-semibold">
-            <TrendingUp size={19} />
+      <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-2.5 text-ink shadow-panel backdrop-blur">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h2 className="inline-flex min-w-0 items-center gap-2 text-base font-semibold">
+            <TrendingUp size={18} />
             Mais votados
           </h2>
-          <span className="text-sm font-medium text-muted">{formatDisplayDate(filters.day)}</span>
+          <span className="shrink-0 text-xs font-medium text-muted">{formatDisplayDate(filters.day)}</span>
         </div>
         <div className="grid gap-2">
           {topPlaces.map((place, index) => (
             <button
               key={place.id}
-              className="grid grid-cols-[28px_1fr_auto] items-center gap-2 rounded-lg border border-line p-2 text-left transition hover:bg-teal-soft"
+              className="grid grid-cols-[26px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-line p-2 text-left transition hover:bg-teal-soft"
               type="button"
               onClick={() => onSelectPlace(place)}
             >
-              <b className="grid size-7 place-items-center rounded-xl bg-amber text-ink">
+              <b className="grid size-6 place-items-center rounded-lg bg-amber text-sm text-ink">
                 {index + 1}
               </b>
               <span>
