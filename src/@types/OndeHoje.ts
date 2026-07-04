@@ -1,3 +1,5 @@
+export type VoteType = 'GENERAL' | 'MUSIC' | 'FOOD' | 'DRINK'
+
 export type Place = {
   id: string
   googlePlaceId: string
@@ -16,12 +18,18 @@ export type Place = {
 
 export type MapPlace = Place & {
   voteCount: number
+  dominantVoteType: VoteType
   voters: Array<{
     publicId: string
     name: string
     username?: string | null
     avatarUrl?: string | null
     note?: string | null
+    voteType: VoteType
+    friendship?: {
+      status: FriendListItem['status']
+      direction: FriendListItem['direction']
+    }
   }>
 }
 
@@ -60,6 +68,7 @@ export type VoteHistoryItem = {
   id: string
   day: string
   note?: string | null
+  voteType: VoteType
   scopeKey: string
   group?: Pick<Group, 'id' | 'name'> | null
   place: Place

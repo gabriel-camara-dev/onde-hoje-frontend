@@ -14,3 +14,4 @@ export function Panel({ children, className = '', ...props }: PanelProps) {
     </section>
   )
 }
+

@@ -6,6 +6,7 @@ import type {
   ListUsersResponse,
   MapHistoryDay,
   MapPlace,
+  VoteType,
   Place,
   VoteHistoryItem,
 } from '../@types/OndeHoje'
@@ -43,9 +44,9 @@ export async function getTodayMap(filters: MapFilters) {
   return response.data
 }
 
-export async function getTopPlaces(filters: MapFilters) {
+export async function getTopPlaces(filters: MapFilters & { limit?: number }) {
   const response = await axiosPublic.get<MapPlace[]>('/map/top-places', {
-    params: compactParams({ ...filters, limit: 10 }),
+    params: compactParams({ limit: 10, ...filters }),
   })
 
   return response.data
@@ -107,7 +108,7 @@ export async function registerUser(body: {
 
 export async function voteForPlace(
   placePublicId: string,
-  body: { day?: string; groupPublicId?: string; note?: string }
+  body: { day?: string; groupPublicId?: string; note?: string; voteType?: VoteType }
 ) {
   const response = await axiosPrivate.post(`/places/${placePublicId}/votes`, body)
 

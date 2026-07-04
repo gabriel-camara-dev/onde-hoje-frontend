@@ -1,7 +1,7 @@
 import { CalendarDays, LocateFixed, Search } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import type { MapPlace } from '../../@types/OndeHoje'
+import type { MapPlace, VoteType } from '../../@types/OndeHoje'
 import { loadGoogleMaps } from '../../lib/googleMaps'
 import Button from '../ui/Button'
 
@@ -20,6 +20,7 @@ export type GooglePlaceDraft = {
 }
 
 type GooglePlacesMapProps = {
+  className?: string
   city?: string
   maxMapDay: string
   mapDay: string
@@ -54,6 +55,7 @@ const googlePlaceFields = [
 
 export function GooglePlacesMap({
   city,
+  className = '',
   maxMapDay,
   mapDay,
   minMapDay,
@@ -69,6 +71,7 @@ export function GooglePlacesMap({
   const mapRef = useRef<google.maps.Map | null>(null)
   const markersRef = useRef<google.maps.Marker[]>([])
   const draftMarkerRef = useRef<google.maps.Marker | null>(null)
+  const searchMarkerRef = useRef<google.maps.Marker | null>(null)
   const onDraftSelectedRef = useRef(onDraftSelected)
   const onLocationResolvedRef = useRef(onLocationResolved)
   const onPlaceSelectedRef = useRef(onPlaceSelected)
@@ -161,14 +164,10 @@ export function GooglePlacesMap({
     markersRef.current.forEach((marker) => marker.setMap(null))
     markersRef.current = places.map((place) => {
       const marker = new window.google.maps.Marker({
+        icon: createVoteMarkerIcon(window.google, place.dominantVoteType, place.voteCount),
         map,
         position: { lat: place.latitude, lng: place.longitude },
         title: `${place.name} (${place.voteCount} votos)`,
-        label: {
-          color: '#ffffff',
-          fontWeight: '800',
-          text: String(place.voteCount),
-        },
       })
 
       marker.addListener('click', () => {
@@ -325,7 +324,7 @@ export function GooglePlacesMap({
         return
       }
 
-      selectGooglePlace(window.google, map, place, place.location)
+      previewGooglePlaceSearchResult(window.google, map, place, place.location)
     } catch {
       setError('Nenhum local encontrado no Google Maps para essa busca.')
     } finally {
@@ -362,6 +361,7 @@ export function GooglePlacesMap({
     latLng: google.maps.LatLng
   ) {
     const draft = createDraftFromLatLng(latLng)
+    searchMarkerRef.current?.setMap(null)
     draftMarkerRef.current?.setMap(null)
     draftMarkerRef.current = new googleApi.maps.Marker({
       map,
@@ -373,13 +373,12 @@ export function GooglePlacesMap({
     setError('')
     onDraftSelectedRef.current(draft)
   }
-
   function selectExistingPlace(place: MapPlace) {
+    searchMarkerRef.current?.setMap(null)
     draftMarkerRef.current?.setMap(null)
     setError('')
     onPlaceSelectedRef.current(place)
   }
-
   function selectFromMapClick(
     googleApi: typeof google,
     map: google.maps.Map,
@@ -408,7 +407,7 @@ export function GooglePlacesMap({
       return
     }
 
-    selectNearbyGooglePlace(googleApi, map, location)
+    selectLatLngDraft(googleApi, map, location)
   }
 
   async function selectGooglePlaceById(
@@ -437,40 +436,6 @@ export function GooglePlacesMap({
     }
   }
 
-  async function selectNearbyGooglePlace(
-    googleApi: typeof google,
-    map: google.maps.Map,
-    location: google.maps.LatLng
-  ) {
-    try {
-      const { places: nearbyPlaces } = await googleApi.maps.places.Place.searchNearby({
-        fields: googlePlaceFields,
-        language: 'pt-BR',
-        locationRestriction: {
-          center: location,
-          radius: 80,
-        },
-        maxResultCount: 5,
-        rankPreference: googleApi.maps.places.SearchNearbyRankPreference.DISTANCE,
-        region: 'BR',
-      })
-      const nearestPlace = nearbyPlaces
-        .filter((place) => place.id && place.displayName && place.location)
-        .sort(
-          (a, b) =>
-            distanceInMeters(location, a.location!) - distanceInMeters(location, b.location!)
-        )[0]
-
-      if (!nearestPlace?.location || distanceInMeters(location, nearestPlace.location) > 80) {
-        selectLatLngDraft(googleApi, map, location)
-        return
-      }
-
-      selectGooglePlace(googleApi, map, nearestPlace, nearestPlace.location)
-    } catch {
-      selectLatLngDraft(googleApi, map, location)
-    }
-  }
 
   function selectGooglePlace(
     googleApi: typeof google,
@@ -479,6 +444,7 @@ export function GooglePlacesMap({
     location: google.maps.LatLng
   ) {
     const draft = mapGooglePlace(place, location)
+    searchMarkerRef.current?.setMap(null)
     draftMarkerRef.current?.setMap(null)
     draftMarkerRef.current = new googleApi.maps.Marker({
       map,
@@ -498,6 +464,32 @@ export function GooglePlacesMap({
     setSuggestions([])
   }
 
+  function previewGooglePlaceSearchResult(
+    googleApi: typeof google,
+    map: google.maps.Map,
+    place: google.maps.places.Place,
+    location: google.maps.LatLng
+  ) {
+    const draft = mapGooglePlace(place, location)
+
+    searchMarkerRef.current?.setMap(null)
+    searchMarkerRef.current = new googleApi.maps.Marker({
+      map,
+      position: { lat: draft.latitude, lng: draft.longitude },
+      title: draft.name,
+    })
+
+    map.panTo({ lat: draft.latitude, lng: draft.longitude })
+    map.setZoom(17)
+    setError('')
+    onLocationResolvedRef.current?.({
+      address: draft.formattedAddress,
+      city: draft.city,
+      state: draft.state,
+    })
+    autocompleteSessionTokenRef.current = null
+    setSuggestions([])
+  }
   async function selectAutocompleteSuggestion(prediction: google.maps.places.PlacePrediction) {
     const map = mapRef.current
 
@@ -521,7 +513,7 @@ export function GooglePlacesMap({
         searchInputRef.current.value = hydratedPlace.displayName
       }
 
-      selectGooglePlace(window.google, map, hydratedPlace, hydratedPlace.location)
+      previewGooglePlaceSearchResult(window.google, map, hydratedPlace, hydratedPlace.location)
     } catch {
       setError('Nao foi possivel abrir essa sugestao do Google Maps.')
     } finally {
@@ -542,18 +534,18 @@ export function GooglePlacesMap({
   }
 
   return (
-    <section className="relative min-h-[calc(100vh-188px)] overflow-hidden rounded-2xl border border-line bg-surface shadow-panel">
+    <section className={`relative min-h-[calc(100vh-188px)] overflow-hidden rounded-lg border border-line bg-surface shadow-panel ${className}`}>
       <div ref={mapElementRef} className="absolute inset-0" />
       <div className="absolute left-3 right-3 top-3 z-10 grid gap-2 sm:left-4 sm:right-4 sm:top-4 md:left-6 md:right-auto md:w-[720px]">
         <form
-          className="grid grid-cols-2 gap-2 rounded-2xl border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto]"
+          className="grid grid-cols-2 gap-2 rounded-lg border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto]"
           onSubmit={submitSearch}
         >
-          <label className="col-span-2 grid min-h-11 grid-cols-[20px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 text-xs font-bold text-muted sm:col-span-3 lg:col-span-1">
+          <label className="col-span-2 grid min-h-11 grid-cols-[20px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 text-xs font-medium text-muted sm:col-span-3 lg:col-span-1">
             <CalendarDays size={17} />
             <input
               aria-label="Dia do mapa"
-              className="min-h-11 min-w-0 bg-transparent text-sm font-black text-ink outline-none"
+              className="min-h-11 min-w-0 bg-transparent text-sm font-semibold text-ink outline-none"
               max={maxMapDay}
               min={minMapDay}
               name="mapDay"
@@ -591,7 +583,7 @@ export function GooglePlacesMap({
           </Button>
         </form>
         {suggestions.length > 0 && (
-          <div className="overflow-hidden rounded-2xl border border-line bg-surface/95 shadow-panel backdrop-blur">
+          <div className="overflow-hidden rounded-lg border border-line bg-surface/95 shadow-panel backdrop-blur">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion.placeId}
@@ -604,7 +596,7 @@ export function GooglePlacesMap({
                   {suggestion.mainText?.text ?? suggestion.text.text}
                 </strong>
                 {suggestion.secondaryText?.text && (
-                  <span className="truncate text-xs font-bold text-muted">
+                  <span className="truncate text-xs font-medium text-muted">
                     {suggestion.secondaryText.text}
                   </span>
                 )}
@@ -612,11 +604,11 @@ export function GooglePlacesMap({
             ))}
           </div>
         )}
-        <div className="rounded-xl border border-line bg-surface/90 px-4 py-2 text-xs font-bold text-muted shadow-panel backdrop-blur">
-          Pesquise um local, uma cidade ou clique direto no mapa para selecionar um ponto.
+        <div className="rounded-xl border border-line bg-surface/90 px-4 py-2 text-xs font-medium text-muted shadow-panel backdrop-blur">
+          Pesquise um local, clique em um lugar do Google Maps ou clique em qualquer ponto do mapa.
         </div>
         {error && (
-          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-800">
+          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
             {error}
           </div>
         )}
@@ -625,6 +617,46 @@ export function GooglePlacesMap({
   )
 }
 
+function createVoteMarkerIcon(googleApi: typeof google, voteType: VoteType, voteCount: number) {
+  const marker = voteMarkerMeta(voteType)
+  const count = Math.min(voteCount, 99)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="54" height="66" viewBox="0 0 54 66"><path fill="${marker.color}" d="M27 2C13.2 2 2 13.2 2 27c0 18.8 25 37 25 37s25-18.2 25-37C52 13.2 40.8 2 27 2Z"/><circle cx="27" cy="27" r="19" fill="${marker.inner}"/><path fill="white" d="${marker.path}"/><circle cx="39" cy="15" r="10" fill="#111827"/><text x="39" y="19" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="800" fill="white">${count}</text></svg>`
+
+  return {
+    anchor: new googleApi.maps.Point(27, 64),
+    scaledSize: new googleApi.maps.Size(40, 49),
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+  }
+}
+
+function voteMarkerMeta(voteType: VoteType) {
+  switch (voteType) {
+    case 'MUSIC':
+      return {
+        color: '#7c3aed',
+        inner: '#6d28d9',
+        path: 'M31 15v19.2A5.4 5.4 0 1 1 27 29V18.4l11-2.7V30A5.4 5.4 0 1 1 34 25V14.3l-3 .7Z',
+      }
+    case 'FOOD':
+      return {
+        color: '#16a34a',
+        inner: '#15803d',
+        path: 'M18 14h2v12h-2V14Zm4 0h2v12h-2V14Zm-6 0h2v12h-2V14Zm2 15h4v13h-4V29Zm14-15h4v28h-4V30h-5c.2-7 1.7-12.3 5-16Z',
+      }
+    case 'DRINK':
+      return {
+        color: '#0891b2',
+        inner: '#0e7490',
+        path: 'M17 15h20l-2.3 25H19.3L17 15Zm4.4 5 .5 6h10.2l.5-6H21.4Zm1 11 .4 5h8.4l.4-5h-9.2Z',
+      }
+    default:
+      return {
+        color: '#0f766e',
+        inner: '#0d9488',
+        path: 'M27 14a11 11 0 1 0 0 22 11 11 0 0 0 0-22Zm0 6a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z',
+      }
+  }
+}
 function mapGooglePlace(
   place: google.maps.places.Place,
   location: google.maps.LatLng
@@ -707,3 +739,7 @@ function distanceInMeters(from: google.maps.LatLng, to: google.maps.LatLng) {
 function toRadians(value: number) {
   return (value * Math.PI) / 180
 }
+
+
+
+

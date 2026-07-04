@@ -13,14 +13,14 @@ export default function Header() {
 
   return (
     <>
-      <header className="mb-4 flex items-center justify-between rounded-3xl border border-line bg-surface/90 p-3 text-ink shadow-panel backdrop-blur">
-        <Link className="inline-flex items-center gap-3 font-black" to="/">
-          <span className="grid size-10 place-items-center rounded-2xl bg-teal text-xs text-white shadow-[0_12px_28px_rgba(124,58,237,.35)]">
+      <header className="mb-4 flex items-center justify-between rounded-lg border border-line bg-surface/95 p-2 text-ink shadow-panel backdrop-blur">
+        <Link className="inline-flex items-center gap-3 font-semibold" to="/">
+          <span className="grid size-9 place-items-center rounded-md bg-contrast text-xs font-medium text-on-contrast">
             OH
           </span>
-          <span className="grid leading-none">
+          <span className="grid leading-tight">
             Onde Hoje
-            <small className="text-xs font-bold text-muted">Google Maps + votos</small>
+            <small className="text-xs font-medium text-muted">Mapa social</small>
           </span>
         </Link>
 
@@ -29,7 +29,7 @@ export default function Header() {
           {user ? (
             <button
               aria-label="Abrir menu da conta"
-              className="inline-flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-surface px-2.5 py-1.5 text-sm font-bold text-ink transition hover:bg-teal-soft"
+              className="inline-flex min-h-10 items-center gap-2 rounded-md border border-line bg-surface px-2 py-1 text-sm font-semibold text-ink transition hover:border-teal/45 hover:bg-teal-soft"
               title="Abrir menu"
               type="button"
               onClick={() => setIsMenuOpen(true)}
@@ -39,7 +39,7 @@ export default function Header() {
             </button>
           ) : (
             <Button type="button" variant="secondary" onClick={() => setIsMenuOpen(true)}>
-              <Menu size={19} />
+              <Menu size={18} />
               Menu
             </Button>
           )}
@@ -64,7 +64,7 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
     return (
       <img
         alt=""
-        className="size-9 rounded-xl border border-line object-cover"
+        className="size-8 rounded-md border border-line object-cover"
         referrerPolicy="no-referrer"
         src={avatarSrc}
       />
@@ -72,8 +72,9 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
   }
 
   return (
-    <span className="grid size-9 place-items-center rounded-xl bg-teal text-xs font-black text-white">
+    <span className="grid size-8 place-items-center rounded-md bg-teal text-xs font-medium text-white">
       {initials || 'U'}
     </span>
   )
 }
+

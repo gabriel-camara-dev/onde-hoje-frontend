@@ -1,7 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
 import type { FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { API_BASE_URL } from '../../api/api'
+import { API_BASE_URL, ApiError } from '../../api/api'
 import { registerUser } from '../../api/ondeHoje'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import Button from '../../components/ui/Button'
@@ -33,6 +34,11 @@ export function Login() {
     })
   }
 
+
+  const showRegisterLoading = useDelayedBoolean(registerMutation.isPending, 350)
+  const registerFieldErrors = getRegisterFieldErrors(registerMutation.error)
+  const registerFormError = registerFieldErrors ? undefined : registerMutation.error?.message
+
   return (
     <main className="relative grid min-h-screen place-items-center bg-paper px-4 py-8 text-ink lg:px-6">
       <div className="absolute right-4 top-4">
@@ -41,10 +47,10 @@ export function Login() {
 
       <div className="mx-auto grid w-full max-w-5xl gap-6">
         <section className="mx-auto grid max-w-3xl justify-items-center text-center">
-          <span className="inline-flex rounded-xl bg-teal px-3 py-2 text-xs font-black text-white shadow-[0_12px_30px_rgba(124,58,237,.35)]">
+          <span className="inline-flex rounded-xl bg-teal px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(15,118,110,.18)]">
             ONDE HOJE
           </span>
-          <h1 className="mt-5 max-w-2xl text-4xl font-black leading-tight md:text-5xl">
+          <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-tight md:text-5xl">
             Entre ou crie sua conta para votar no role de hoje.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
@@ -53,13 +59,13 @@ export function Login() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <a
-              className="inline-flex min-h-11 items-center rounded-xl bg-teal px-4 py-2 text-sm font-black text-white transition hover:bg-teal-dark"
+              className="inline-flex min-h-11 items-center rounded-xl bg-teal px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-dark"
               href="#cadastro"
             >
               Criar conta para votar
             </a>
             <Link
-              className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 py-2 text-sm font-black text-ink transition hover:bg-teal-soft"
+              className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-teal-soft"
               to="/"
             >
               Explorar mapa publico
@@ -69,15 +75,15 @@ export function Login() {
 
         <div className="mx-auto grid w-full max-w-4xl gap-4">
           {needsVoteAccount && (
-            <section className="rounded-2xl border border-line bg-teal-soft p-4 shadow-panel">
-              <p className="text-xs font-black uppercase text-teal">Cadastro necessario</p>
-              <h2 className="mt-1 text-xl font-black">Voce precisa criar uma conta para votar.</h2>
+            <section className="rounded-lg border border-line bg-teal-soft p-4 shadow-panel">
+              <p className="text-xs font-semibold uppercase text-teal">Cadastro necessario</p>
+              <h2 className="mt-1 text-xl font-semibold">Voce precisa criar uma conta para votar.</h2>
               <p className="mt-2 text-sm leading-6 text-muted">
                 O mapa e publico, mas votos ficam ligados ao seu perfil para limitar os votos do
                 dia e mostrar seu historico.
               </p>
               <a
-                className="mt-3 inline-flex text-sm font-black text-teal hover:text-teal-dark"
+                className="mt-3 inline-flex text-sm font-semibold text-teal hover:text-teal-dark"
                 href="#cadastro"
               >
                 Ir para cadastro
@@ -85,9 +91,10 @@ export function Login() {
             </section>
           )}
 
+
           <StatusBanner
-            error={registerMutation.error?.message}
-            loading={registerMutation.isPending}
+            error={registerFormError}
+            loading={showRegisterLoading}
             message={
               registerMutation.isSuccess
                 ? 'Conta criada. Entre com seu email e senha.'
@@ -96,19 +103,19 @@ export function Login() {
           />
 
           <div className="grid items-start gap-4 md:grid-cols-2">
-            <Panel className="rounded-2xl p-5">
-              <p className="mb-2 text-xs font-black uppercase text-teal">Entrar</p>
-              <h2 className="mb-4 text-2xl font-black">Acesse sua conta</h2>
+            <Panel className="rounded-lg p-5">
+              <p className="mb-2 text-xs font-semibold uppercase text-teal">Entrar</p>
+              <h2 className="mb-4 text-2xl font-semibold">Acesse sua conta</h2>
               <a
-                className="mb-3 inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-line bg-surface px-4 py-2 text-sm font-bold text-ink transition hover:bg-teal-soft"
+                className="mb-3 inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-line bg-surface px-4 py-2 text-sm font-medium text-ink transition hover:bg-teal-soft"
                 href={`${API_BASE_URL}/sessions/google`}
               >
-                <span className="grid size-5 place-items-center rounded-full bg-white text-sm font-black text-[#4285f4]">
+                <span className="grid size-5 place-items-center rounded-full bg-white text-sm font-semibold text-[#4285f4]">
                   G
                 </span>
                 Entrar com Google
               </a>
-              <div className="mb-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-bold uppercase text-muted">
+              <div className="mb-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-medium uppercase text-muted">
                 <span className="h-px bg-line" />
                 ou
                 <span className="h-px bg-line" />
@@ -116,9 +123,9 @@ export function Login() {
               <LoginForm />
             </Panel>
 
-            <Panel id="cadastro" className="scroll-mt-4 rounded-2xl p-5">
-              <p className="mb-2 text-xs font-black uppercase text-teal">Cadastro local</p>
-              <h2 className="mb-2 text-2xl font-black">Criar conta</h2>
+            <Panel id="cadastro" className="scroll-mt-4 rounded-lg p-5">
+              <p className="mb-2 text-xs font-semibold uppercase text-teal">Cadastro local</p>
+              <h2 className="mb-2 text-2xl font-semibold">Criar conta</h2>
               <p className="mb-4 text-sm text-muted">
                 Depois de criar sua conta, use seu email ou username para entrar.
               </p>
@@ -129,12 +136,14 @@ export function Login() {
                   maxLength={30}
                   minLength={3}
                   name="username"
+                  error={registerFieldErrors?.username}
                   pattern="[a-z0-9_]+"
                   placeholder="seu_username"
                   required
                 />
                 <Input
                   label="Email"
+                  error={registerFieldErrors?.email}
                   name="email"
                   placeholder="voce@email.com"
                   required
@@ -158,4 +167,31 @@ export function Login() {
       </div>
     </main>
   )
+}
+
+function getRegisterFieldErrors(error: unknown) {
+  if (!(error instanceof ApiError) || !error.field) {
+    return undefined
+  }
+
+  return {
+    [error.field]:
+      error.field === 'email' ? 'Este email ja esta em uso.' : 'Este username ja esta em uso.',
+  }
+}
+function useDelayedBoolean(value: boolean, delayMs: number) {
+  const [delayedValue, setDelayedValue] = useState(false)
+
+  useEffect(() => {
+    if (!value) {
+      setDelayedValue(false)
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => setDelayedValue(true), delayMs)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [delayMs, value])
+
+  return delayedValue
 }

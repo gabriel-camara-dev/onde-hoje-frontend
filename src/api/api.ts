@@ -25,6 +25,18 @@ export const axiosPrivate = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+export type ApiErrorField = 'email' | 'username'
+
+export class ApiError extends Error {
+  readonly field?: ApiErrorField
+
+  constructor(message: string, field?: ApiErrorField) {
+    super(message)
+    this.name = 'ApiError'
+    this.field = field
+  }
+}
+
 const onRequest = (config: InternalAxiosRequestConfig) => {
   const token = useUserStore.getState().accessToken
 
@@ -45,10 +57,17 @@ const onResponseError = (error: unknown) => {
   }
 
   if (axios.isAxiosError(error)) {
-    const message = error.response?.data?.message ?? error.response?.data?.error
+    const data = error.response?.data
+    const message = data?.message ?? data?.error
+    const field = data?.field
 
     if (message) {
-      return Promise.reject(new Error(Array.isArray(message) ? message.join(', ') : message))
+      return Promise.reject(
+        new ApiError(
+          Array.isArray(message) ? message.join(', ') : message,
+          field === 'email' || field === 'username' ? field : undefined
+        )
+      )
     }
   }
 

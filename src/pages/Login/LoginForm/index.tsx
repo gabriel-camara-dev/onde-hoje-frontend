@@ -49,10 +49,11 @@ export function LoginForm() {
         required
         type="password"
       />
-      {errors.root && <p className="text-sm font-bold text-red-700">{errors.root.message}</p>}
+      {errors.root && <p className="text-sm font-medium text-red-700">{errors.root.message}</p>}
       <Button type="submit" disabled={isSubmitting || isPending}>
         {isPending ? 'Entrando...' : 'Entrar'}
       </Button>
     </form>
   )
 }
+

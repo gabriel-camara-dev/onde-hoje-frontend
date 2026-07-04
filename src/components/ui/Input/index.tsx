@@ -7,7 +7,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export default function Input({ className = '', error, label, ...props }: InputProps) {
   return (
-    <label className="grid gap-1.5 text-xs font-bold text-muted">
+    <label className="grid gap-1.5 text-xs font-semibold text-muted">
       {label && (
         <span>
           {label}
@@ -16,9 +16,10 @@ export default function Input({ className = '', error, label, ...props }: InputP
       )}
       <input
         {...props}
-        className={`min-h-10 rounded-lg border bg-surface px-3 py-2 text-sm text-ink outline-teal transition placeholder:text-muted/60 ${error ? 'border-red-500' : 'border-line'} ${className}`}
+        className={`min-h-10 rounded-md border bg-surface px-3 py-2 text-sm text-ink outline-none transition placeholder:text-muted/55 focus:border-teal focus:ring-2 focus:ring-teal/20 ${error ? 'border-red-500' : 'border-line'} ${className}`}
       />
-      {error && <span className="text-xs text-red-700">{error}</span>}
+      {error && <span className="text-xs font-semibold text-red-700">{error}</span>}
     </label>
   )
 }
+

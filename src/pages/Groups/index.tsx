@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Trash2, UserPlus, X } from 'lucide-react'
 import type { FormEvent } from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Group, MyGroup } from '../../@types/OndeHoje'
 import {
   acceptGroupMember,
@@ -17,6 +17,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import Input from '../../components/ui/Input'
 import { Panel } from '../../components/ui/Panel'
 import { StatusBanner } from '../../components/ui/StatusBanner'
+import { loadGoogleMaps } from '../../lib/googleMaps'
 import { useUserStore } from '../../stores/userStore'
 
 type GroupsPageProps = {
@@ -32,10 +33,39 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
   const [modal, setModal] = useState<'create' | 'join' | null>(null)
   const [createPrivacy, setCreatePrivacy] = useState<GroupTab>('PUBLIC')
   const [selectedGroupId, setSelectedGroupId] = useState<string>()
+  const [currentCity, setCurrentCity] = useState(city)
+  const groupsCity = city || currentCity
+
+  useEffect(() => {
+    let isMounted = true
+
+    if (city) {
+      setCurrentCity(city)
+      return () => {
+        isMounted = false
+      }
+    }
+
+    resolveCurrentCity().then((location) => {
+      if (isMounted && location?.city) {
+        setCurrentCity(location.city)
+      }
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [city])
+
+  useEffect(() => {
+    if (!user && activeTab === 'PRIVATE') {
+      setActiveTab('PUBLIC')
+    }
+  }, [activeTab, user])
 
   const groupsQuery = useQuery({
-    queryKey: ['groups', city],
-    queryFn: () => listPublicGroups(city),
+    queryKey: ['groups', groupsCity],
+    queryFn: () => listPublicGroups(groupsCity),
   })
   const myGroupsQuery = useQuery({
     enabled: Boolean(user),
@@ -98,9 +128,13 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     joinMutation.mutate(new FormData(event.currentTarget))
   }
 
-  const publicGroups = groupsQuery.data ?? []
-  const myGroups = myGroupsQuery.data ?? []
+  const publicGroups = useMemo(() => groupsQuery.data ?? [], [groupsQuery.data])
+  const myGroups = useMemo(() => myGroupsQuery.data ?? [], [myGroupsQuery.data])
   const visibleGroups = useMemo(() => {
+    if (!user) {
+      return publicGroups
+    }
+
     if (activeTab === 'PRIVATE') {
       return myGroups.filter((group) => group.privacy === 'PRIVATE')
     }
@@ -109,7 +143,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     const myPublicIds = new Set(myPublicGroups.map((group) => group.id))
 
     return [...myPublicGroups, ...publicGroups.filter((group) => !myPublicIds.has(group.id))]
-  }, [activeTab, myGroups, publicGroups])
+  }, [activeTab, myGroups, publicGroups, user])
   const selectedGroup = myGroups.find((group) => group.id === selectedGroupId)
 
   return (
@@ -148,43 +182,53 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
         }
       />
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(360px,.8fr)_minmax(0,1.2fr)]">
-        <Panel>
+      <section className={user ? 'grid gap-4 xl:grid-cols-[minmax(360px,.8fr)_minmax(0,1.2fr)]' : 'grid gap-4'}>
+        <Panel className={user ? '' : 'mx-auto w-full max-w-4xl'}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-black">Grupos</h1>
-              <p className="mt-1 text-sm text-muted">Entre em grupos, veja membros e gerencie convites.</p>
+              <h1 className="text-2xl font-semibold">Grupos</h1>
+              <p className="mt-1 text-sm text-muted">
+                {user
+                  ? 'Entre em grupos, veja membros e gerencie convites.'
+                  : groupsCity
+                    ? `Grupos publicos em ${groupsCity} para acompanhar onde a galera vai hoje.`
+                    : 'Grupos publicos principais para acompanhar onde a galera vai hoje.'}
+              </p>
             </div>
-            <div className="flex gap-2">
-              <Button type="button" variant="secondary" onClick={() => setModal('join')}>
-                Entrar
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  setCreatePrivacy('PUBLIC')
-                  setModal('create')
-                }}
-              >
-                Novo grupo
-              </Button>
-            </div>
+            {user && (
+              <div className="flex gap-2">
+                <Button type="button" variant="secondary" onClick={() => setModal('join')}>
+                  Entrar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setCreatePrivacy('PUBLIC')
+                    setModal('create')
+                  }}
+                >
+                  Novo grupo
+                </Button>
+              </div>
+            )}
           </div>
 
-          <div className="mb-4 grid grid-cols-2 rounded-lg border border-line bg-surface-muted p-1">
-            <TabButton active={activeTab === 'PUBLIC'} onClick={() => setActiveTab('PUBLIC')}>
-              Publicos
-            </TabButton>
-            <TabButton active={activeTab === 'PRIVATE'} onClick={() => setActiveTab('PRIVATE')}>
-              Privados
-            </TabButton>
-          </div>
+          {user && (
+            <div className="mb-4 grid grid-cols-2 rounded-lg border border-line bg-surface-muted p-1">
+              <TabButton active={activeTab === 'PUBLIC'} onClick={() => setActiveTab('PUBLIC')}>
+                Publicos
+              </TabButton>
+              <TabButton active={activeTab === 'PRIVATE'} onClick={() => setActiveTab('PRIVATE')}>
+                Privados
+              </TabButton>
+            </div>
+          )}
 
           <div className="grid gap-3">
             {visibleGroups.length === 0 ? (
               <EmptyState
                 title={activeTab === 'PRIVATE' ? 'Nenhum grupo privado' : 'Nenhum grupo publico'}
-                description="Crie um grupo ou entre usando nome e senha."
+                description={user ? 'Crie um grupo ou entre usando nome e senha.' : 'Quando houver grupos publicos nessa cidade, eles aparecem aqui.'}
               />
             ) : (
               visibleGroups.map((group) => (
@@ -199,7 +243,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
           </div>
         </Panel>
 
-        {selectedGroup ? (
+        {user && (selectedGroup ? (
           <GroupDetail
             group={selectedGroup}
             onAccept={(username) => acceptMutation.mutate({ groupId: selectedGroup.id, username })}
@@ -213,28 +257,28 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
               description="Selecione um grupo seu para ver membros, aceitar pedidos ou convidar amigos."
             />
           </Panel>
-        )}
+        ))}
       </section>
 
-      {modal === 'create' && (
+      {user && modal === 'create' && (
         <Modal title="Novo grupo" onClose={() => setModal(null)}>
           <form className="grid gap-3" onSubmit={submitCreate}>
             <Input label="Nome" maxLength={80} minLength={2} name="name" required />
-            <label className="grid gap-1.5 text-xs font-bold text-muted">
+            <label className="grid gap-1.5 text-xs font-medium text-muted">
               Descricao
               <textarea
-                className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-teal"
+                className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
                 maxLength={280}
                 name="description"
                 rows={4}
               />
             </label>
-            <label className="grid gap-1.5 text-xs font-bold text-muted">
+            <label className="grid gap-1.5 text-xs font-medium text-muted">
               <span>
                 Privacidade <span className="text-teal">*</span>
               </span>
               <select
-                className="min-h-10 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-teal"
+                className="min-h-10 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
                 name="privacy"
                 required
                 value={createPrivacy}
@@ -254,7 +298,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
         </Modal>
       )}
 
-      {modal === 'join' && (
+      {user && modal === 'join' && (
         <Modal title="Entrar em grupo" onClose={() => setModal(null)}>
           <form className="grid gap-3" onSubmit={submitJoin}>
             <Input label="Nome do grupo" name="name" required />
@@ -280,7 +324,7 @@ function TabButton({
 }) {
   return (
     <button
-      className={`min-h-10 rounded-md px-3 text-sm font-black transition ${
+      className={`min-h-10 rounded-md px-3 text-sm font-semibold transition ${
         active ? 'bg-surface text-teal shadow-sm' : 'text-muted hover:bg-surface'
       }`}
       type="button"
@@ -311,11 +355,11 @@ function GroupListItem({
       onClick={onSelect}
     >
       <div>
-        <p className="mb-1 text-xs font-black uppercase text-teal">
+        <p className="mb-1 text-xs font-semibold uppercase text-teal">
           {group.privacy === 'PRIVATE' ? 'Privado' : 'Publico'}
-          {canOpen && ' · meu grupo'}
+          {canOpen && ' - meu grupo'}
         </p>
-        <h2 className="text-lg font-black">{group.name}</h2>
+        <h2 className="text-lg font-semibold">{group.name}</h2>
         <p className="mt-1 text-sm text-muted">{group.description || 'Grupo sem descricao.'}</p>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -356,10 +400,10 @@ function GroupDetail({
     <Panel>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="mb-2 text-xs font-black uppercase text-teal">
-            {group.privacy === 'PRIVATE' ? 'Privado' : 'Publico'} · {group.myRole}
+          <p className="mb-2 text-xs font-semibold uppercase text-teal">
+            {group.privacy === 'PRIVATE' ? 'Privado' : 'Publico'} - {group.myRole}
           </p>
-          <h2 className="text-2xl font-black">{group.name}</h2>
+          <h2 className="text-2xl font-semibold">{group.name}</h2>
           <p className="mt-2 text-sm text-muted">{group.description || 'Grupo sem descricao.'}</p>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -411,7 +455,7 @@ function MemberSection({
 }) {
   return (
     <div>
-      <h3 className="mb-2 text-sm font-black uppercase text-muted">{title}</h3>
+      <h3 className="mb-2 text-sm font-semibold uppercase text-muted">{title}</h3>
       <div className="grid gap-2 md:grid-cols-2">
         {members.length === 0 ? (
           <EmptyState title="Nada aqui" description="Quando houver membros, eles aparecem nesta area." />
@@ -466,9 +510,9 @@ function Modal({
 }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/55 px-4 py-6 backdrop-blur-sm">
-      <section className="grid w-full max-w-lg gap-4 rounded-2xl border border-line bg-surface p-5 text-ink shadow-panel">
+      <section className="grid w-full max-w-lg gap-4 rounded-lg border border-line bg-surface p-5 text-ink shadow-panel">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-black">{title}</h2>
+          <h2 className="text-xl font-semibold">{title}</h2>
           <Button className="size-12 p-0" type="button" variant="ghost" onClick={onClose}>
             <X size={26} strokeWidth={2.6} />
           </Button>
@@ -479,6 +523,64 @@ function Modal({
   )
 }
 
+function resolveCurrentCity() {
+  return new Promise<{ city?: string; state?: string } | null>((resolve) => {
+    if (!navigator.geolocation) {
+      resolve(null)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const googleApi = await loadGoogleMaps()
+          const geocoder = new googleApi.maps.Geocoder()
+
+          geocoder.geocode(
+            {
+              location: {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              },
+            },
+            (results, status) => {
+              if (status !== googleApi.maps.GeocoderStatus.OK || !results?.[0]) {
+                resolve(null)
+                return
+              }
+
+              const result = results[0]
+
+              resolve({
+                city:
+                  geocodeComponent(result, 'administrative_area_level_2', 'long_name') ??
+                  geocodeComponent(result, 'locality', 'long_name'),
+                state: geocodeComponent(result, 'administrative_area_level_1', 'short_name'),
+              })
+            }
+          )
+        } catch {
+          resolve(null)
+        }
+      },
+      () => resolve(null),
+      {
+        enableHighAccuracy: false,
+        maximumAge: 1000 * 60 * 10,
+        timeout: 6000,
+      }
+    )
+  })
+}
+
+function geocodeComponent(
+  result: google.maps.GeocoderResult,
+  type: string,
+  nameKind: 'long_name' | 'short_name'
+) {
+  return result.address_components.find((item) => item.types.includes(type))?.[nameKind]
+}
+
 function Metric({ label, value }: { label: string; value: number }) {
   return (
     <span className="rounded-lg border border-line p-3 text-sm">
@@ -487,3 +589,4 @@ function Metric({ label, value }: { label: string; value: number }) {
     </span>
   )
 }
+

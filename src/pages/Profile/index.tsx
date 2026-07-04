@@ -44,7 +44,7 @@ export default function ProfilePage() {
     return (
       <section className="grid min-h-[calc(100vh-140px)] place-items-center px-4">
         <Panel className="w-full max-w-xl text-center">
-          <h1 className="text-2xl font-black">Perfil</h1>
+          <h1 className="text-2xl font-semibold">Perfil</h1>
           <p className="mt-2 text-sm text-muted">Entre para ver e editar suas informacoes.</p>
         </Panel>
       </section>
@@ -94,13 +94,13 @@ export default function ProfilePage() {
         />
 
         <Panel className="text-center">
-          <p className="mb-2 text-xs font-black uppercase text-teal">Minha conta</p>
-          <h1 className="text-3xl font-black text-ink">Perfil</h1>
+          <p className="mb-2 text-xs font-semibold uppercase text-teal">Minha conta</p>
+          <h1 className="text-3xl font-semibold text-ink">Perfil</h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">
             Atualize suas informacoes publicas e a foto que aparece nos votos.
           </p>
           {user.username && (
-            <span className="mt-4 inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-black text-teal">
+            <span className="mt-4 inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-semibold text-teal">
               @{user.username}
             </span>
           )}
@@ -108,7 +108,7 @@ export default function ProfilePage() {
           <div className="mt-8 flex justify-center">
             <button
               type="button"
-              className="group relative grid h-32 w-32 cursor-pointer place-items-center overflow-hidden rounded-full border-4 border-surface bg-contrast text-4xl font-black text-on-contrast shadow-[var(--shadow-panel)] outline-none ring-2 ring-line transition hover:scale-[1.02] hover:ring-teal focus-visible:ring-4 focus-visible:ring-teal"
+              className="group relative grid h-32 w-32 cursor-pointer place-items-center overflow-hidden rounded-full border-4 border-surface bg-contrast text-4xl font-semibold text-on-contrast shadow-[var(--shadow-panel)] outline-none ring-2 ring-line transition hover:scale-[1.02] hover:ring-teal focus-visible:ring-4 focus-visible:ring-teal"
               aria-label="Alterar foto de perfil"
               onClick={() => fileInputRef.current?.click()}
             >
@@ -177,3 +177,4 @@ export default function ProfilePage() {
     </section>
   )
 }
+

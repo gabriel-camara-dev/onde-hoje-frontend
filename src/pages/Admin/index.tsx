@@ -34,7 +34,7 @@ export default function AdminPage() {
   if (!user) {
     return (
       <Panel className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-black">Admin</h1>
+        <h1 className="text-2xl font-semibold">Admin</h1>
         <p className="mt-2 text-sm text-muted">Entre com uma conta ADMIN para visualizar o dashboard.</p>
       </Panel>
     )
@@ -61,7 +61,7 @@ export default function AdminPage() {
           </Panel>
           <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
             <Panel>
-              <h2 className="mb-4 text-lg font-black">Top lugares hoje</h2>
+              <h2 className="mb-4 text-lg font-semibold">Top lugares hoje</h2>
               <div className="grid gap-2">
                 {dashboard.topPlaces.map((place, index) => (
                   <article
@@ -69,8 +69,8 @@ export default function AdminPage() {
                     className="grid grid-cols-[36px_1fr_auto] items-center gap-3 rounded-lg border border-line p-3"
                   >
                     <b className="grid size-8 place-items-center rounded-lg bg-amber">{index + 1}</b>
-                    <span className="text-sm font-bold">{place.name}</span>
-                    <em className="text-sm font-black not-italic text-teal">{place.votesCount}</em>
+                    <span className="text-sm font-medium">{place.name}</span>
+                    <em className="text-sm font-semibold not-italic text-teal">{place.votesCount}</em>
                   </article>
                 ))}
               </div>
@@ -78,7 +78,7 @@ export default function AdminPage() {
             <Panel>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-black">Usuários</h2>
+                  <h2 className="text-lg font-semibold">UsuÃ¡rios</h2>
                   <p className="text-sm text-muted">
                     {usersQuery.data?.totalCount ?? 0} encontrados
                   </p>
@@ -103,9 +103,9 @@ export default function AdminPage() {
                   <tbody>
                     {(usersQuery.data?.data ?? []).map((listedUser) => (
                       <tr key={listedUser.id} className="bg-teal-soft">
-                        <td className="rounded-l-lg px-3 py-3 font-bold">{listedUser.name}</td>
+                        <td className="rounded-l-lg px-3 py-3 font-medium">{listedUser.name}</td>
                         <td className="px-3 py-3">{listedUser.email}</td>
-                        <td className="rounded-r-lg px-3 py-3 font-black text-teal">
+                        <td className="rounded-r-lg px-3 py-3 font-semibold text-teal">
                           {listedUser.role}
                         </td>
                       </tr>
@@ -129,3 +129,4 @@ function Metric({ label, value }: { label: string; value: number }) {
     </div>
   )
 }
+

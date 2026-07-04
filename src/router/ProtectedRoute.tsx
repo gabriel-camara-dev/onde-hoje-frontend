@@ -1,9 +1,10 @@
 import { Navigate } from 'react-router-dom'
+import type { UserRole } from '../@types/User'
 import { useUserStore } from '../stores/userStore'
 
 interface ProtectedRouteProps {
   children?: React.ReactNode
-  requiredRole: 'ADMIN'
+  requiredRole?: UserRole
 }
 
 export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
@@ -12,7 +13,9 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
   if (!accessToken) {
     return <Navigate to="/login" replace />
-  } else if (user && user.role !== requiredRole) {
+  }
+
+  if (requiredRole && user?.role !== requiredRole) {
     return <Navigate to="/" replace />
   }
 

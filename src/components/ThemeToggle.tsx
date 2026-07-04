@@ -18,13 +18,14 @@ export function ThemeToggle() {
   return (
     <Button
       aria-label={isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro'}
-      className="size-12 rounded-2xl px-0"
+      className="size-12 px-0"
       title={isDarkMode ? 'Modo claro' : 'Modo escuro'}
       type="button"
       variant="secondary"
       onClick={toggleDarkMode}
     >
-      {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
+      {isDarkMode ? <Sun size={28} strokeWidth={2.4} /> : <Moon size={28} strokeWidth={2.4} />}
     </Button>
   )
 }
+

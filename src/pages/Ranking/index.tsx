@@ -14,6 +14,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import Input from '../../components/ui/Input'
 import { Panel } from '../../components/ui/Panel'
 import { StatusBanner } from '../../components/ui/StatusBanner'
+import { formatInputDate } from '../../lib/date'
 import { loadGoogleMaps } from '../../lib/googleMaps'
 
 type RankingFilters = {
@@ -22,7 +23,7 @@ type RankingFilters = {
   day: string
 }
 
-const today = formatLocalDate(new Date())
+const today = formatInputDate(new Date())
 
 export default function Ranking() {
   const [filters, setFilters] = useState<RankingFilters>({ city: '', state: '', day: today })
@@ -164,11 +165,11 @@ function RankingPanel({
   return (
     <Panel>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="inline-flex items-center gap-2 text-2xl font-black">
+        <h1 className="inline-flex items-center gap-2 text-2xl font-semibold">
           <Icon className="text-amber" size={25} />
           {title}
         </h1>
-        <span className="rounded-full bg-amber px-3 py-1 text-sm font-black">{places.length}</span>
+        <span className="rounded-full bg-amber px-3 py-1 text-sm font-semibold">{places.length}</span>
       </div>
       <div className="mb-4 grid gap-2 sm:grid-cols-2">
         <Metric label={countLabel} value={totalVotes} />
@@ -184,14 +185,14 @@ function RankingPanel({
           places.map((place, index) => (
             <article
               key={place.id}
-              className="grid grid-cols-[42px_1fr_auto] items-center gap-3 rounded-2xl border border-line p-3"
+              className="grid grid-cols-[42px_1fr_auto] items-center gap-3 rounded-lg border border-line p-3"
             >
               <b className="grid size-9 place-items-center rounded-xl bg-amber">{index + 1}</b>
               <span className="grid min-w-0">
                 <strong className="truncate">{place.name}</strong>
                 <small className="truncate text-muted">{place.formattedAddress}</small>
               </span>
-              <em className="text-sm font-black not-italic text-teal">{place.voteCount} votos</em>
+              <em className="text-sm font-semibold not-italic text-teal">{place.voteCount} votos</em>
             </article>
           ))
         )}
@@ -202,7 +203,7 @@ function RankingPanel({
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface-muted p-3">
+    <div className="rounded-lg border border-line bg-surface-muted p-3">
       <strong className="block text-2xl">{value}</strong>
       <span className="text-sm text-muted">{label}</span>
     </div>
@@ -213,13 +214,6 @@ function totalVotes(places: MapPlace[]) {
   return places.reduce((sum, place) => sum + place.voteCount, 0)
 }
 
-function formatLocalDate(date: Date) {
-  return new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date)
-}
 
 function resolveCurrentCity() {
   return new Promise<{ city?: string; state?: string } | null>((resolve) => {
@@ -278,3 +272,4 @@ function geocodeComponent(
 ) {
   return result.address_components.find((item) => item.types.includes(type))?.[nameKind]
 }
+

@@ -9,12 +9,12 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    'bg-teal text-white shadow-[0_14px_30px_rgba(124,58,237,.26)] hover:bg-teal-dark',
+    'border border-transparent bg-teal text-white shadow-[0_8px_18px_rgba(15,118,110,.18)] hover:bg-teal-dark',
   secondary:
-    'border border-line bg-surface text-ink hover:bg-teal-soft',
+    'border border-line bg-surface text-ink hover:border-teal/45 hover:bg-teal-soft',
   ghost:
-    'bg-transparent text-muted hover:bg-teal-soft hover:text-ink',
-  danger: 'bg-red-700 text-white hover:bg-red-800',
+    'border border-transparent bg-transparent text-muted hover:bg-surface-muted hover:text-ink',
+  danger: 'border border-transparent bg-red-700 text-white hover:bg-red-800',
 }
 
 export default function Button({
@@ -26,9 +26,10 @@ export default function Button({
   return (
     <button
       {...props}
-      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`}
+      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`}
     >
       {children}
     </button>
   )
 }
+

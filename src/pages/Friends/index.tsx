@@ -51,7 +51,7 @@ export default function FriendsPage() {
   if (!user) {
     return (
       <Panel className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-black">Amizades</h1>
+        <h1 className="text-2xl font-semibold">Amizades</h1>
         <p className="mt-2 text-sm text-muted">Entre para listar, solicitar e aceitar amizades.</p>
       </Panel>
     )
@@ -89,7 +89,7 @@ export default function FriendsPage() {
       />
       <section className="grid gap-4 lg:grid-cols-[340px_1fr]">
         <Panel>
-          <h1 className="text-2xl font-black">Amizades</h1>
+          <h1 className="text-2xl font-semibold">Amizades</h1>
           <p className="mt-2 text-sm text-muted">
             Solicite amizade pelo username da pessoa.
           </p>
@@ -133,7 +133,7 @@ function FriendColumn({
 }: FriendColumnProps) {
   return (
     <div>
-      <h2 className="mb-3 font-black">{title}</h2>
+      <h2 className="mb-3 font-semibold">{title}</h2>
       <div className="grid gap-2">
         {items.length === 0 ? (
           <EmptyState title="Nada aqui" description="Quando houver movimento, aparece nesta coluna." />
@@ -142,7 +142,7 @@ function FriendColumn({
             <article key={item.friend.publicId} className="rounded-lg border border-line p-3">
               <strong className="block">{item.friend.name}</strong>
               {item.friend.username && (
-                <span className="mt-1 block text-sm font-bold text-teal">@{item.friend.username}</span>
+                <span className="mt-1 block text-sm font-medium text-teal">@{item.friend.username}</span>
               )}
               {acceptAction && rejectAction && item.friend.username && (
                 <div className="mt-3 grid grid-cols-2 gap-2">
@@ -171,3 +171,4 @@ function FriendColumn({
     </div>
   )
 }
+

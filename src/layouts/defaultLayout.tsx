@@ -11,3 +11,4 @@ export function DefaultLayout() {
     </div>
   )
 }
+

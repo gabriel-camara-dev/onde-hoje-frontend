@@ -22,8 +22,22 @@ export const router = createBrowserRouter([
       { path: 'ranking', element: <Ranking /> },
       { path: 'history', element: <History /> },
       { path: 'groups', element: <Groups /> },
-      { path: 'friends', element: <Friends /> },
-      { path: 'profile', element: <Profile /> },
+      {
+        path: 'friends',
+        element: (
+          <ProtectedRoute>
+            <Friends />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: 'admin',
         element: (

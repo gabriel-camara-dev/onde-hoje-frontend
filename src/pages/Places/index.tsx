@@ -6,6 +6,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import Input from '../../components/ui/Input'
 import { Panel } from '../../components/ui/Panel'
 import { StatusBanner } from '../../components/ui/StatusBanner'
+import { formatInputDate } from '../../lib/date'
 
 type PlacesPageProps = {
   filters?: MapFilters
@@ -13,7 +14,7 @@ type PlacesPageProps = {
 
 export default function PlacesPage({ filters: initialFilters }: PlacesPageProps) {
   const queryClient = useQueryClient()
-  const filters = initialFilters ?? { city: '', day: new Date().toISOString().slice(0, 10), q: '' }
+  const filters = initialFilters ?? { city: '', day: formatInputDate(new Date()), q: '' }
   const placesQuery = useQuery({
     queryKey: ['places', filters],
     queryFn: () => listPlaces(filters),
@@ -54,7 +55,7 @@ export default function PlacesPage({ filters: initialFilters }: PlacesPageProps)
       <section className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <Panel>
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-2xl font-black">Lugares cadastrados</h1>
+            <h1 className="text-2xl font-semibold">Lugares cadastrados</h1>
             <strong className="text-muted">{places.length}</strong>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -68,7 +69,7 @@ export default function PlacesPage({ filters: initialFilters }: PlacesPageProps)
                 <article key={place.id} className="grid gap-2 rounded-lg border border-line p-3">
                   <strong>{place.name}</strong>
                   <span className="text-sm text-muted">{place.formattedAddress}</span>
-                  <small className="font-bold text-teal">
+                  <small className="font-medium text-teal">
                     {[place.city, place.state].filter(Boolean).join(', ')}
                   </small>
                 </article>
@@ -77,7 +78,7 @@ export default function PlacesPage({ filters: initialFilters }: PlacesPageProps)
           </div>
         </Panel>
         <Panel>
-          <h2 className="mb-4 text-lg font-black">Cadastrar lugar</h2>
+          <h2 className="mb-4 text-lg font-semibold">Cadastrar lugar</h2>
           <form className="grid gap-3" onSubmit={handleCreate}>
             <Input label="Google Place ID" name="googlePlaceId" required />
             <Input label="Nome" minLength={2} name="name" required />
@@ -99,3 +100,4 @@ export default function PlacesPage({ filters: initialFilters }: PlacesPageProps)
     </>
   )
 }
+
