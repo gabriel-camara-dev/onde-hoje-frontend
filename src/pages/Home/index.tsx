@@ -31,7 +31,6 @@ export default function Home() {
   const [filters, setFilters] = useState<MapFilters>({ city: '', day: today, q: '' })
   const [selectedPlace, setSelectedPlace] = useState<MapPlace>()
   const [draftPlace, setDraftPlace] = useState<GooglePlaceDraft>()
-  const [currentAddress, setCurrentAddress] = useState('')
   const [requestedFriendUsernames, setRequestedFriendUsernames] = useState<Set<string>>(new Set())
 
   const mapQuery = useQuery({
@@ -333,8 +332,6 @@ export default function Home() {
             setSelectedPlace(undefined)
           }}
           onLocationResolved={(location) => {
-            setCurrentAddress(location.address)
-
             if (location.city && !filters.city) {
               setFilters((currentFilters) => ({
                 ...currentFilters,
@@ -350,7 +347,6 @@ export default function Home() {
         />
 
         <HomeSidebar
-          currentAddress={currentAddress}
           errors={[
             mapQuery.error?.message,
             topPlacesQuery.error?.message,
@@ -369,7 +365,6 @@ export default function Home() {
             requestFriendshipMutation.isPending
           }
           groups={activeGroups}
-          placesCount={places.length}
           topPlaces={topPlaces}
           userVotesForSelectedDay={userVotesForSelectedDay}
           onGroupChange={(groupPublicId) => {

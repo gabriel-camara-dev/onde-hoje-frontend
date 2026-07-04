@@ -1,4 +1,4 @@
-export type VoteType = 'GENERAL' | 'MUSIC' | 'FOOD' | 'DRINK'
+export type VoteType = 'GENERAL' | 'MUSIC' | 'FOOD' | 'DRINK' | 'SPORTS'
 
 export type Place = {
   id: string

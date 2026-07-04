@@ -645,6 +645,12 @@ function voteMarkerMeta(voteType: VoteType) {
         inner: '#15803d',
         path: 'M18 14h2v12h-2V14Zm4 0h2v12h-2V14Zm-6 0h2v12h-2V14Zm2 15h4v13h-4V29Zm14-15h4v28h-4V30h-5c.2-7 1.7-12.3 5-16Z',
       }
+    case 'SPORTS':
+      return {
+        color: '#2563eb',
+        inner: '#1d4ed8',
+        path: 'M27 13a14 14 0 1 0 0 28 14 14 0 0 0 0-28Zm-2 4a10 10 0 0 1 4 0l-2 4-2-4Zm-6 4 4 2-1 4-4-3 1-3Zm16 0 1 3-4 3-1-4 4-2Zm-8 5 4 3-1.5 5h-5L23 29l4-3Zm-8 9 4-1 2 3-4 1-2-3Zm16 0-2 3-4-1 2-3 4 1Z',
+      }
     case 'DRINK':
       return {
         color: '#0891b2',

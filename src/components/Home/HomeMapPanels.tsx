@@ -1,7 +1,6 @@
 import {
   CalendarDays,
   Clock3,
-  MapPin,
   Navigation,
   TrendingUp,
   UserCheck,
@@ -124,12 +123,10 @@ export function PlaceVoteDialog({
 }
 
 type HomeSidebarProps = {
-  currentAddress: string
   errors?: Array<string | undefined>
   filters: MapFilters
   isLoading?: boolean
   groups: Group[]
-  placesCount: number
   topPlaces: MapPlace[]
   userVotesForSelectedDay: number
   onGroupChange: (groupPublicId?: string) => void
@@ -137,12 +134,10 @@ type HomeSidebarProps = {
 }
 
 export function HomeSidebar({
-  currentAddress,
   errors = [],
   filters,
   isLoading,
   groups,
-  placesCount,
   topPlaces,
   userVotesForSelectedDay,
   onGroupChange,
@@ -162,14 +157,7 @@ export function HomeSidebar({
           Busque um lugar no Google Maps, salve na base e vote. Lugares com votos aparecem como
           marcadores reais no mapa.
         </p>
-        {currentAddress && (
-          <div className="mt-4 rounded-lg border border-line bg-surface-muted p-2.5">
-            <span className="block text-xs font-semibold uppercase text-muted">
-              Localizacao atual do mapa
-            </span>
-            <strong className="mt-1 block text-sm">{currentAddress}</strong>
-          </div>
-        )}
+
         <div className="mt-4">
           <Select
             label="Filtrar por grupo"
@@ -186,9 +174,8 @@ export function HomeSidebar({
             </span>
           )}
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-2 gap-2">
           <Metric icon={Vote} label="meus votos" value={userVotesForSelectedDay} />
-          <Metric icon={MapPin} label="lugares" value={placesCount} />
           <Metric icon={CalendarDays} label="limite" value={3} />
         </div>
       </section>
@@ -212,7 +199,7 @@ export function HomeSidebar({
               <b className="grid size-6 place-items-center rounded-lg bg-amber text-sm text-ink">
                 {index + 1}
               </b>
-              <span>
+              <span className="min-w-0">
                 <strong className="block truncate text-sm">{place.name}</strong>
                 <small className="block truncate text-muted">{place.city ?? 'Sem cidade'}</small>
               </span>

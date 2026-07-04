@@ -1,4 +1,4 @@
-import { Beer, MapPin, Music, UtensilsCrossed } from 'lucide-react'
+import { Beer, Dumbbell, MapPin, Music, UtensilsCrossed } from 'lucide-react'
 import type { VoteType } from '../../@types/OndeHoje'
 
 export const voteTypeOptions = [
@@ -28,6 +28,15 @@ export const voteTypeOptions = [
       'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-200',
     optionClassName:
       'has-[:checked]:border-rose-400 has-[:checked]:bg-rose-50 has-[:checked]:text-rose-700 dark:has-[:checked]:border-rose-800 dark:has-[:checked]:bg-rose-950/40 dark:has-[:checked]:text-rose-200',
+  },
+  {
+    value: 'SPORTS',
+    label: 'Esporte',
+    icon: Dumbbell,
+    badgeClassName:
+      'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/70 dark:bg-sky-950/40 dark:text-sky-200',
+    optionClassName:
+      'has-[:checked]:border-sky-400 has-[:checked]:bg-sky-50 has-[:checked]:text-sky-700 dark:has-[:checked]:border-sky-800 dark:has-[:checked]:bg-sky-950/40 dark:has-[:checked]:text-sky-200',
   },
   {
     value: 'DRINK',
