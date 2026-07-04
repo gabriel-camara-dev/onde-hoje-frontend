@@ -41,7 +41,6 @@ type MapClickHandler = (
 
 const fallbackCenter = { lat: -23.55052, lng: -46.633308 }
 const existingVoteMarkerHitRadiusMeters = 6
-const minZoomToShowExistingPlaces = 12
 const googlePlaceFields = [
   'addressComponents',
   'displayName',
@@ -390,9 +389,7 @@ export function GooglePlacesMap({
       return
     }
 
-    const nearbyPlace = shouldShowExistingPlaces(map)
-      ? findNearestMapPlace(location, placesRef.current)
-      : undefined
+    const nearbyPlace = findNearestMapPlace(location, placesRef.current)
 
     if (nearbyPlace) {
       selectExistingPlace(nearbyPlace)
@@ -435,7 +432,6 @@ export function GooglePlacesMap({
       selectLatLngDraft(googleApi, map, fallbackLocation)
     }
   }
-
 
   function selectGooglePlace(
     googleApi: typeof google,
@@ -534,7 +530,9 @@ export function GooglePlacesMap({
   }
 
   return (
-    <section className={`relative min-h-[calc(100vh-188px)] overflow-hidden rounded-lg border border-line bg-surface shadow-panel ${className}`}>
+    <section
+      className={`relative min-h-[calc(100vh-188px)] overflow-hidden rounded-lg border border-line bg-surface shadow-panel ${className}`}
+    >
       <div ref={mapElementRef} className="absolute inset-0" />
       <div className="absolute left-3 right-3 top-3 z-10 grid gap-2 sm:left-4 sm:right-4 sm:top-4 md:left-6 md:right-auto md:w-[720px]">
         <form
@@ -569,15 +567,15 @@ export function GooglePlacesMap({
               }}
             />
           </label>
-          <Button className="min-h-11 px-4" disabled={isSearching} type="submit" variant="secondary">
-            {isSearching ? 'Buscando...' : 'Buscar'}
-          </Button>
           <Button
             className="min-h-11 px-4"
-            type="button"
+            disabled={isSearching}
+            type="submit"
             variant="secondary"
-            onClick={locateUser}
           >
+            {isSearching ? 'Buscando...' : 'Buscar'}
+          </Button>
+          <Button className="min-h-11 px-4" type="button" variant="secondary" onClick={locateUser}>
             <LocateFixed size={17} />
             <span className="sm:hidden">Localizar</span>
           </Button>
@@ -620,11 +618,15 @@ export function GooglePlacesMap({
 function createVoteMarkerIcon(googleApi: typeof google, voteType: VoteType, voteCount: number) {
   const marker = voteMarkerMeta(voteType)
   const count = Math.min(voteCount, 99)
+  const width = 40
+  const height = 49
+  const anchorX = Math.round(width / 2)
+  const anchorY = Math.round(height - 1)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="54" height="66" viewBox="0 0 54 66"><path fill="${marker.color}" d="M27 2C13.2 2 2 13.2 2 27c0 18.8 25 37 25 37s25-18.2 25-37C52 13.2 40.8 2 27 2Z"/><circle cx="27" cy="27" r="19" fill="${marker.inner}"/><path fill="white" d="${marker.path}"/><circle cx="39" cy="15" r="10" fill="#111827"/><text x="39" y="19" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="800" fill="white">${count}</text></svg>`
 
   return {
-    anchor: new googleApi.maps.Point(27, 64),
-    scaledSize: new googleApi.maps.Size(40, 49),
+    anchor: new googleApi.maps.Point(anchorX, anchorY),
+    scaledSize: new googleApi.maps.Size(width, height),
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
   }
 }
@@ -712,14 +714,8 @@ function findNearestMapPlace(latLng: google.maps.LatLng, places: MapPlace[]) {
     .sort((a, b) => a.distance - b.distance)[0]?.place
 }
 
-function updateExistingMarkersVisibility(map: google.maps.Map, markers: google.maps.Marker[]) {
-  const visible = shouldShowExistingPlaces(map)
-
-  markers.forEach((marker) => marker.setVisible(visible))
-}
-
-function shouldShowExistingPlaces(map: google.maps.Map) {
-  return (map.getZoom() ?? minZoomToShowExistingPlaces) >= minZoomToShowExistingPlaces
+function updateExistingMarkersVisibility(_map: google.maps.Map, markers: google.maps.Marker[]) {
+  markers.forEach((marker) => marker.setVisible(true))
 }
 
 function distanceInMeters(from: google.maps.LatLng, to: google.maps.LatLng) {
@@ -730,8 +726,7 @@ function distanceInMeters(from: google.maps.LatLng, to: google.maps.LatLng) {
   const deltaLng = toRadians(to.lng() - from.lng())
 
   const a =
-    Math.sin(deltaLat / 2) ** 2 +
-    Math.cos(fromLat) * Math.cos(toLat) * Math.sin(deltaLng / 2) ** 2
+    Math.sin(deltaLat / 2) ** 2 + Math.cos(fromLat) * Math.cos(toLat) * Math.sin(deltaLng / 2) ** 2
 
   return earthRadiusInMeters * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
@@ -739,7 +734,4 @@ function distanceInMeters(from: google.maps.LatLng, to: google.maps.LatLng) {
 function toRadians(value: number) {
   return (value * Math.PI) / 180
 }
-
-
-
 

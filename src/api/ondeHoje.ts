@@ -26,6 +26,21 @@ export type GlobalRankingFilters = {
   state: string
 }
 
+export type GroupMemberSummary = {
+  status: 'ACTIVE' | 'PENDING' | 'BLOCKED'
+  role: 'OWNER' | 'MODERATOR' | 'MEMBER'
+  user: {
+    publicId: string
+    name: string
+    username: string
+    avatarUrl?: string | null
+  }
+}
+
+export type PublicGroupDetails = Group & {
+  members: GroupMemberSummary[]
+}
+
 export type AuthResponse = {
   token: string
   user: User
@@ -85,6 +100,12 @@ export async function listPublicGroups(city: string) {
   const response = await axiosPublic.get<Group[]>('/groups/public', {
     params: compactParams({ city }),
   })
+
+  return response.data
+}
+
+export async function getPublicGroup(groupPublicId: string) {
+  const response = await axiosPublic.get<PublicGroupDetails>(`/groups/${groupPublicId}`)
 
   return response.data
 }
@@ -155,8 +176,17 @@ export async function createGroup(body: {
   return response.data
 }
 
-export async function joinGroup(body: { name: string; password?: string }) {
-  const response = await axiosPrivate.post('/groups/join', body)
+export async function joinGroup(body: {
+  name?: string
+  password?: string
+  groupPublicId?: string
+}) {
+  const response = body.groupPublicId
+    ? await axiosPrivate.post(`/groups/${body.groupPublicId}/join`)
+    : await axiosPrivate.post('/groups/join', {
+        name: body.name,
+        password: body.password,
+      })
 
   return response.data
 }
@@ -168,17 +198,13 @@ export async function listMyGroups() {
 }
 
 export async function acceptGroupMember(groupPublicId: string, username: string) {
-  const response = await axiosPrivate.post(
-    `/groups/${groupPublicId}/members/${username}/accept`
-  )
+  const response = await axiosPrivate.post(`/groups/${groupPublicId}/members/${username}/accept`)
 
   return response.data
 }
 
 export async function inviteGroupMember(groupPublicId: string, username: string) {
-  const response = await axiosPrivate.post(
-    `/groups/${groupPublicId}/members/${username}/invite`
-  )
+  const response = await axiosPrivate.post(`/groups/${groupPublicId}/members/${username}/invite`)
 
   return response.data
 }
@@ -221,11 +247,7 @@ export async function rejectFriendship(username: string) {
   await axiosPrivate.post(`/friends/${username}/reject`)
 }
 
-export async function listUsers(params: {
-  page?: number
-  name?: string
-  email?: string
-}) {
+export async function listUsers(params: { page?: number; name?: string; email?: string }) {
   const response = await axiosPrivate.get<ListUsersResponse>('/users', {
     params: compactParams({
       page: params.page ?? 1,

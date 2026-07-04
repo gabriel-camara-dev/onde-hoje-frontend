@@ -60,6 +60,7 @@ export type MyGroup = Group & {
       publicId: string
       name: string
       username: string
+      avatarUrl?: string | null
     }
   }>
 }
