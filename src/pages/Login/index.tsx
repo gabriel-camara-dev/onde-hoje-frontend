@@ -67,7 +67,7 @@ export function Login() {
             </div>
           </section>
 
-          <ResendConfirmationCard initialEmail={registeredEmail} />
+          <ResendConfirmationCard email={registeredEmail} />
         </div>
       )}
 

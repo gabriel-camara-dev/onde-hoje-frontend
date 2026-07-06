@@ -99,9 +99,10 @@ export default function Ranking() {
               label="Cidade"
               name="city"
               value={draftFilters.city}
-              onChange={(event) =>
-                setDraftFilters((current) => ({ ...current, city: event.currentTarget.value }))
-              }
+              onChange={(event) => {
+                const { value } = event.currentTarget
+                setDraftFilters((current) => ({ ...current, city: value }))
+              }}
             />
             <Input
               label="Estado"
@@ -109,18 +110,20 @@ export default function Ranking() {
               name="state"
               placeholder="SP"
               value={draftFilters.state}
-              onChange={(event) =>
-                setDraftFilters((current) => ({ ...current, state: event.currentTarget.value }))
-              }
+              onChange={(event) => {
+                const { value } = event.currentTarget
+                setDraftFilters((current) => ({ ...current, state: value }))
+              }}
             />
             <Input
               label="Dia"
               name="day"
               type="date"
               value={draftFilters.day}
-              onChange={(event) =>
-                setDraftFilters((current) => ({ ...current, day: event.currentTarget.value }))
-              }
+              onChange={(event) => {
+                const { value } = event.currentTarget
+                setDraftFilters((current) => ({ ...current, day: value }))
+              }}
             />
             <Button className="self-end" type="submit">
               Buscar

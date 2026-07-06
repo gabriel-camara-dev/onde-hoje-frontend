@@ -41,6 +41,11 @@ export type PublicGroupDetails = Group & {
   members: GroupMemberSummary[]
 }
 
+export type GroupMembership = {
+  groupPublicId: string
+  status: 'ACTIVE' | 'PENDING' | 'BLOCKED'
+}
+
 export type AuthResponse = {
   token: string
   user: User
@@ -105,7 +110,7 @@ export async function listPublicGroups(city: string) {
 }
 
 export async function getPublicGroup(groupPublicId: string) {
-  const response = await axiosPublic.get<PublicGroupDetails>(`/groups/${groupPublicId}`)
+  const response = await axiosPrivate.get<PublicGroupDetails>(`/groups/${groupPublicId}`)
 
   return response.data
 }
@@ -182,8 +187,10 @@ export async function joinGroup(body: {
   groupPublicId?: string
 }) {
   const response = body.groupPublicId
-    ? await axiosPrivate.post(`/groups/${body.groupPublicId}/join`)
-    : await axiosPrivate.post('/groups/join', {
+    ? await axiosPrivate.post<GroupMembership>(`/groups/${body.groupPublicId}/join`, {
+        password: body.password,
+      })
+    : await axiosPrivate.post<GroupMembership>('/groups/join', {
         name: body.name,
         password: body.password,
       })
@@ -211,6 +218,10 @@ export async function inviteGroupMember(groupPublicId: string, username: string)
 
 export async function removeGroupMember(groupPublicId: string, username: string) {
   await axiosPrivate.delete(`/groups/${groupPublicId}/members/${username}`)
+}
+
+export async function leaveGroup(groupPublicId: string) {
+  await axiosPrivate.delete(`/groups/${groupPublicId}/members/me`)
 }
 
 export async function listMyVotes() {

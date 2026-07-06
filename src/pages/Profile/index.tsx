@@ -2,12 +2,12 @@ import { useMutation } from '@tanstack/react-query'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useRef } from 'react'
 import { Camera, Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { deleteUser, updateUser, uploadAvatar } from '../../api/ondeHoje'
 import { resolveApiUrl } from '../../api/api'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import { Panel } from '../../components/ui/Panel'
-import { StatusBanner } from '../../components/ui/StatusBanner'
 import { useAuth } from '../../hooks/useAuth'
 import { useUserStore } from '../../stores/userStore'
 
@@ -23,6 +23,10 @@ export default function ProfilePage() {
       if (updatedUser && typeof updatedUser === 'object') {
         updateStoredUser(updatedUser)
       }
+      toast.success('Foto atualizada.')
+    },
+    onError: (error) => {
+      toast.error(error.message)
     },
   })
   const updateMutation = useMutation({
@@ -31,11 +35,20 @@ export default function ProfilePage() {
         name: String(form.get('name') || '') || undefined,
         username: String(form.get('username') || '') || undefined,
       }),
-    onSuccess: (updatedUser) => updateStoredUser(updatedUser),
+    onSuccess: (updatedUser) => {
+      updateStoredUser(updatedUser)
+      toast.success('Perfil atualizado.')
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
   })
   const deleteMutation = useMutation({
     mutationFn: () => deleteUser(user!.id),
     onSuccess: logout,
+    onError: (error) => {
+      toast.error(error.message)
+    },
   })
 
   if (!user) {
@@ -75,27 +88,11 @@ export default function ProfilePage() {
   return (
     <section className="grid min-h-[calc(100vh-140px)] place-items-center px-4 py-8">
       <div className="w-full max-w-2xl">
-        <StatusBanner
-          error={
-            avatarMutation.error?.message ??
-            updateMutation.error?.message ??
-            deleteMutation.error?.message
-          }
-          loading={avatarMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
-          message={
-            avatarMutation.isSuccess
-              ? 'Foto atualizada.'
-              : updateMutation.isSuccess
-                ? 'Perfil atualizado.'
-                : undefined
-          }
-        />
-
         <Panel className="text-center">
           <p className="mb-2 text-xs font-semibold uppercase text-teal">Minha conta</p>
           <h1 className="text-3xl font-semibold text-ink">Perfil</h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-            Atualize suas informacoes publicas e a foto que aparece nos votos.
+            Você pode atualizar suas informações e foto de perfil.
           </p>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">{user.email}</p>
           {user.username && (

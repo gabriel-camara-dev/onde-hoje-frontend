@@ -82,6 +82,7 @@ export type FriendListItem = {
     publicId: string
     name: string
     username?: string | null
+    avatarUrl?: string | null
   }
 }
 

@@ -55,7 +55,7 @@ export function LoginForm() {
       />
       {errors.root && <p className="text-sm font-medium text-red-700">{errors.root.message}</p>}
       {isEmailNotVerified && (
-        <ResendConfirmationCard initialEmail={loginValue?.includes('@') ? loginValue : ''} />
+        <ResendConfirmationCard email={loginValue?.includes('@') ? loginValue : ''} />
       )}
       <Button type="submit" disabled={isSubmitting || isPending}>
         {isPending ? 'Entrando...' : 'Entrar'}

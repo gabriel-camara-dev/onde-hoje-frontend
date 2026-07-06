@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Clock3, Copy, Link2, Trash2, UserPlus } from 'lucide-react'
+import { Check, Clock3, Copy, LogOut, Link2, Send, Trash2, UserPlus } from 'lucide-react'
 import type { FormEvent } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { resolveApiUrl } from '../../api/api'
 import type { FriendListItem, Group, MyGroup } from '../../@types/OndeHoje'
 import {
@@ -12,6 +12,7 @@ import {
   getPublicGroup,
   inviteGroupMember,
   joinGroup,
+  leaveGroup,
   listFriends,
   listMyGroups,
   listPublicGroups,
@@ -41,13 +42,17 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { groupPublicId } = useParams<{ groupPublicId: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const handledJoinInviteRef = useRef(false)
   const user = useUserStore((state) => state.user)
   const [activeTab, setActiveTab] = useState<GroupTab>('PUBLIC')
   const [modal, setModal] = useState<'create' | 'join' | null>(null)
   const [createPrivacy, setCreatePrivacy] = useState<GroupTab>('PUBLIC')
+  const [joinNeedsPassword, setJoinNeedsPassword] = useState(false)
   const [selectedGroupId, setSelectedGroupId] = useState<string>()
   const [currentCity, setCurrentCity] = useState(city)
   const [groupSearch, setGroupSearch] = useState('')
+  const [onlyMyGroups, setOnlyMyGroups] = useState(false)
   const [requestedFriendUsernames, setRequestedFriendUsernames] = useState<Set<string>>(new Set())
   const groupsCity = city || currentCity
 
@@ -113,15 +118,21 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     onSuccess: () => {
       setModal(null)
       refreshGroups()
+      toast.success('Grupo criado.')
+    },
+    onError: (error) => {
+      toast.error(error.message)
     },
   })
   const joinMutation = useMutation({
     mutationFn: (input: { name?: string; password?: string; groupPublicId?: string }) =>
       joinGroup(input),
-    onSuccess: () => {
+    onSuccess: (membership) => {
       setModal(null)
       refreshGroups()
-      toast.success('Entrada solicitada.')
+      toast.success(
+        membership?.status === 'PENDING' ? 'Entrada solicitada.' : 'Voce entrou no grupo.',
+      )
     },
     onError: (error) => {
       toast.error(error.message)
@@ -130,17 +141,50 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
   const acceptMutation = useMutation({
     mutationFn: ({ groupId, username }: { groupId: string; username: string }) =>
       acceptGroupMember(groupId, username),
-    onSuccess: () => refreshGroups(),
+    onSuccess: () => {
+      refreshGroups()
+      toast.success('Membro aprovado.')
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
   })
   const inviteMutation = useMutation({
     mutationFn: ({ groupId, username }: { groupId: string; username: string }) =>
       inviteGroupMember(groupId, username.replace(/^@/, '')),
-    onSuccess: () => refreshGroups(),
+    onSuccess: () => {
+      refreshGroups()
+      toast.success('Membro convidado.')
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
   })
   const removeMutation = useMutation({
     mutationFn: ({ groupId, username }: { groupId: string; username: string }) =>
       removeGroupMember(groupId, username),
-    onSuccess: () => refreshGroups(),
+    onSuccess: () => {
+      refreshGroups()
+      toast.success('Membro removido.')
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
+  const leaveMutation = useMutation({
+    mutationFn: leaveGroup,
+    onSuccess: (_data, groupId) => {
+      setSelectedGroupId(undefined)
+      refreshGroups()
+      toast.success('Voce saiu do grupo.')
+
+      if (groupPublicId === groupId) {
+        navigate('/groups', { replace: true })
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
   })
   const requestFriendshipMutation = useMutation({
     mutationFn: requestFriendship,
@@ -168,10 +212,15 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
   function submitJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    joinMutation.mutate({
-      name: String(form.get('name')),
-      password: String(form.get('password') || '') || undefined,
-    })
+    const groupPublicId = String(form.get('groupPublicId') || '').trim()
+    const password = joinNeedsPassword ? String(form.get('password') || '') || undefined : undefined
+
+    if (!isGroupPublicId(groupPublicId)) {
+      toast.error('Informe um ID de grupo valido.')
+      return
+    }
+
+    joinMutation.mutate({ groupPublicId, password })
   }
 
   const publicGroups = useMemo(() => groupsQuery.data ?? [], [groupsQuery.data])
@@ -186,10 +235,15 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     }
 
     const myPublicGroups = myGroups.filter((group) => group.privacy === 'PUBLIC')
+
+    if (onlyMyGroups) {
+      return myPublicGroups
+    }
+
     const myPublicIds = new Set(myPublicGroups.map((group) => group.id))
 
     return [...myPublicGroups, ...publicGroups.filter((group) => !myPublicIds.has(group.id))]
-  }, [activeTab, myGroups, publicGroups, user])
+  }, [activeTab, myGroups, onlyMyGroups, publicGroups, user])
   const filteredGroups = useMemo(() => {
     const query = normalizeSearch(groupSearch)
 
@@ -216,57 +270,44 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     myGroups.filter((group) => group.privacy === 'PUBLIC').map((group) => group.id)
   )
   const selectedGroupInviteUrl = selectedGroup
-    ? `${window.location.origin}/groups/${selectedGroup.id}`
+    ? `${window.location.origin}/groups/${selectedGroup.id}?join=1`
     : ''
 
+  useEffect(() => {
+    if (
+      !user ||
+      !selectedGroup ||
+      !searchParams.has('join') ||
+      handledJoinInviteRef.current ||
+      'myRole' in selectedGroup
+    ) {
+      return
+    }
+
+    handledJoinInviteRef.current = true
+    joinMutation.mutate({ groupPublicId: selectedGroup.id })
+    const nextSearchParams = new URLSearchParams(searchParams)
+    nextSearchParams.delete('join')
+    setSearchParams(nextSearchParams, { replace: true })
+  }, [joinMutation, searchParams, selectedGroup, setSearchParams, user])
+
   function loginForGroupInvite() {
-    const returnTo = `${location.pathname}${location.search}`
+    const nextSearchParams = new URLSearchParams(location.search)
+    nextSearchParams.set('join', '1')
+    const returnTo = `${location.pathname}?${nextSearchParams.toString()}`
+
     navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`)
   }
 
   return (
     <>
       <StatusBanner
-        error={
-          groupsQuery.error?.message ??
-          myGroupsQuery.error?.message ??
-          createMutation.error?.message ??
-          joinMutation.error?.message ??
-          acceptMutation.error?.message ??
-          inviteMutation.error?.message ??
-          removeMutation.error?.message ??
-          requestFriendshipMutation.error?.message
-        }
-        loading={
-          groupsQuery.isLoading ||
-          myGroupsQuery.isLoading ||
-          friendsQuery.isLoading ||
-          createMutation.isPending ||
-          joinMutation.isPending ||
-          acceptMutation.isPending ||
-          inviteMutation.isPending ||
-          removeMutation.isPending ||
-          requestFriendshipMutation.isPending
-        }
-        message={
-          createMutation.isSuccess
-            ? 'Grupo criado.'
-            : acceptMutation.isSuccess
-                ? 'Membro aprovado.'
-                : inviteMutation.isSuccess
-                  ? 'Membro convidado.'
-                  : removeMutation.isSuccess
-                    ? 'Membro removido.'
-                    : undefined
-        }
+        error={groupsQuery.error?.message ?? myGroupsQuery.error?.message}
+        loading={groupsQuery.isLoading || myGroupsQuery.isLoading || friendsQuery.isLoading}
       />
 
-      <section
-        className={
-          user ? 'grid gap-4 xl:grid-cols-[minmax(360px,.8fr)_minmax(0,1.2fr)]' : 'grid gap-4'
-        }
-      >
-        <Panel className={user ? '' : 'mx-auto w-full max-w-4xl'}>
+      <section className="grid gap-4 xl:grid-cols-[minmax(360px,.8fr)_minmax(0,1.2fr)]">
+        <Panel>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold">Grupos</h1>
@@ -318,6 +359,18 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
             />
           </div>
 
+          {user && activeTab === 'PUBLIC' && (
+            <label className="mb-4 flex min-h-10 cursor-pointer items-center justify-between gap-3 rounded-lg border border-line bg-surface-muted px-3 py-2 text-sm font-semibold text-ink">
+              <span>Meus grupos</span>
+              <input
+                checked={onlyMyGroups}
+                className="size-4 accent-teal"
+                type="checkbox"
+                onChange={(event) => setOnlyMyGroups(event.currentTarget.checked)}
+              />
+            </label>
+          )}
+
           <div className="grid gap-3">
             {filteredGroups.length === 0 ? (
               <EmptyState
@@ -349,6 +402,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
           <GroupDetail
             currentUserPublicId={user?.id}
             friendByUsername={friendByUsername}
+            friends={friendsQuery.data ?? []}
             group={selectedGroup}
             inviteUrl={selectedGroupInviteUrl}
             isRequestingFriend={requestFriendshipMutation.isPending}
@@ -367,6 +421,11 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
               'myRole' in selectedGroup || !user
                 ? undefined
                 : () => joinMutation.mutate({ groupPublicId: selectedGroup.id })
+            }
+            onLeave={
+              selectedMyGroup?.myStatus === 'ACTIVE'
+                ? () => leaveMutation.mutate(selectedGroup.id)
+                : undefined
             }
             onLoginToJoin={
               'myRole' in selectedGroup || user || selectedGroup.privacy !== 'PUBLIC'
@@ -437,8 +496,17 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
       {user && modal === 'join' && (
         <Modal title="Entrar em grupo" onClose={() => setModal(null)}>
           <form className="grid gap-3" onSubmit={submitJoin}>
-            <Input label="Nome do grupo" name="name" required />
-            <Input label="Senha" name="password" type="password" />
+            <Input label="ID do grupo" name="groupPublicId" placeholder="Cole o ID copiado" required />
+            <label className="flex min-h-10 items-center justify-between gap-3 rounded-lg border border-line bg-surface-muted px-3 py-2 text-sm font-semibold text-ink">
+              <span>Grupo privado</span>
+              <input
+                checked={joinNeedsPassword}
+                className="size-4 accent-teal"
+                type="checkbox"
+                onChange={(event) => setJoinNeedsPassword(event.currentTarget.checked)}
+              />
+            </label>
+            {joinNeedsPassword && <Input label="Senha" name="password" type="password" />}
             <Button disabled={joinMutation.isPending} type="submit" variant="secondary">
               Entrar
             </Button>
@@ -536,12 +604,14 @@ function GroupListItem({
 function GroupDetail({
   currentUserPublicId,
   friendByUsername,
+  friends,
   group,
   inviteUrl,
   isRequestingFriend,
   onAccept,
   onInvite,
   onJoin,
+  onLeave,
   onLoginToJoin,
   onRemove,
   onRequestFriend,
@@ -549,12 +619,14 @@ function GroupDetail({
 }: {
   currentUserPublicId?: string
   friendByUsername: Map<string, FriendListItem>
+  friends: FriendListItem[]
   group: MyGroup | PublicGroupDetails
   inviteUrl: string
   isRequestingFriend?: boolean
   onAccept?: (username: string) => void
   onInvite?: (username: string) => void
   onJoin?: () => void
+  onLeave?: () => void
   onLoginToJoin?: () => void
   onRemove?: (username: string) => void
   onRequestFriend: (username: string) => void
@@ -564,6 +636,48 @@ function GroupDetail({
   const isMember = 'myRole' in group && group.myStatus === 'ACTIVE'
   const pendingMembers = group.members.filter((member) => member.status === 'PENDING')
   const activeMembers = group.members.filter((member) => member.status === 'ACTIVE')
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<
+    { type: 'leave' } | { type: 'remove'; username: string; name: string } | null
+  >(null)
+  const [inviteFriendSearch, setInviteFriendSearch] = useState('')
+  const [selectedInviteUsernames, setSelectedInviteUsernames] = useState<Set<string>>(new Set())
+  const activeMemberUsernames = new Set(activeMembers.map((member) => member.user.username))
+  const inviteFriends = friends.filter((friendship) => {
+    const username = friendship.friend.username
+
+    if (friendship.status !== 'ACCEPTED' || !username || activeMemberUsernames.has(username)) {
+      return false
+    }
+
+    const query = normalizeSearch(inviteFriendSearch)
+
+    return !query || normalizeSearch(`${friendship.friend.name} ${username}`).includes(query)
+  })
+
+  function confirmRemoveMember(username: string) {
+    const member = group.members.find((item) => item.user.username === username)
+
+    setConfirmAction({
+      type: 'remove',
+      username,
+      name: member?.user.name ?? `@${username}`,
+    })
+  }
+
+  function confirmActionSubmit() {
+    if (!confirmAction) {
+      return
+    }
+
+    if (confirmAction.type === 'leave') {
+      onLeave?.()
+    } else {
+      onRemove?.(confirmAction.username)
+    }
+
+    setConfirmAction(null)
+  }
 
   async function copyGroupId() {
     try {
@@ -587,19 +701,37 @@ function GroupDetail({
     }
   }
 
-  function submitInvite(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const form = event.currentTarget
-    const username = String(new FormData(form).get('username') || '').replace(/^@/, '')
+  function toggleInviteUsername(username: string) {
+    setSelectedInviteUsernames((current) => {
+      const next = new Set(current)
 
-    if (username && onInvite) {
-      onInvite(username)
-      form.reset()
-    }
+      if (next.has(username)) {
+        next.delete(username)
+      } else {
+        next.add(username)
+      }
+
+      return next
+    })
   }
 
+  function sendSelectedInvites() {
+    if (!onInvite || selectedInviteUsernames.size === 0) {
+      return
+    }
+
+    for (const username of selectedInviteUsernames) {
+      onInvite(username)
+    }
+
+    setSelectedInviteUsernames(new Set())
+    setIsInviteModalOpen(false)
+  }
+
+
   return (
-    <Panel>
+    <>
+      <Panel>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="mb-2 text-xs font-semibold uppercase text-teal">
@@ -608,21 +740,18 @@ function GroupDetail({
           </p>
           <h2 className="text-2xl font-semibold">{group.name}</h2>
           <p className="mt-2 text-sm text-muted">{group.description || 'Grupo sem descricao.'}</p>
-          <div className="mt-3 flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-muted p-2">
-            <span className="text-xs font-semibold uppercase text-muted">ID do grupo</span>
-            <code className="min-w-0 flex-1 truncate rounded-md bg-surface px-2 py-1 text-xs font-semibold text-ink">
-              {group.id}
-            </code>
-            <Button className="min-h-8 px-3 py-1.5 text-xs" type="button" variant="secondary" onClick={copyGroupId}>
-              <Copy size={15} />
-              Copiar
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={() => setIsInviteModalOpen(true)}>
+              <UserPlus size={17} />
+              Convidar
             </Button>
+            {isMember && onLeave && (
+              <Button type="button" variant="danger" onClick={() => setConfirmAction({ type: 'leave' })}>
+                <LogOut size={17} />
+                Sair do grupo
+              </Button>
+            )}
           </div>
-          <Button className="mt-3" type="button" variant="secondary" onClick={copyInviteLink}>
-            <Link2 size={17} />
-            Copiar link
-            <Copy size={15} />
-          </Button>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Metric label="membros" value={group.membersCount ?? activeMembers.length} />
@@ -642,20 +771,6 @@ function GroupDetail({
         </div>
       )}
 
-      {canManage && (
-        <form className="mb-5 grid gap-2 sm:grid-cols-[1fr_auto]" onSubmit={submitInvite}>
-          <Input
-            label="Convidar"
-            name="username"
-            placeholder="Username do seu amigo"
-            required
-          />
-          <Button className="self-end" type="submit" variant="secondary">
-            <UserPlus size={17} />
-            Convidar
-          </Button>
-        </form>
-      )}
 
       <div className="grid gap-5">
         {canManage && pendingMembers.length > 0 && (
@@ -667,7 +782,7 @@ function GroupDetail({
             requestedFriendUsernames={requestedFriendUsernames}
             title="Pedidos pendentes"
             onAccept={onAccept}
-            onRemove={onRemove}
+            onRemove={confirmRemoveMember}
             onRequestFriend={onRequestFriend}
           />
         )}
@@ -679,11 +794,118 @@ function GroupDetail({
           members={activeMembers}
           requestedFriendUsernames={requestedFriendUsernames}
           title="Membros"
-          onRemove={canManage ? onRemove : undefined}
+          onRemove={canManage ? confirmRemoveMember : undefined}
           onRequestFriend={onRequestFriend}
         />
       </div>
-    </Panel>
+      </Panel>
+
+      {confirmAction && (
+        <Modal
+          title={confirmAction.type === 'leave' ? 'Sair do grupo' : 'Remover membro'}
+          onClose={() => setConfirmAction(null)}
+        >
+          <div className="grid gap-4">
+            <p className="text-sm text-muted">
+              {confirmAction.type === 'leave'
+                ? canManage
+                  ? 'Você e o dono deste grupo. Ao sair, o cargo de dono será transferido para outro membro do grupo. Se não houver outro membro ativo, o grupo será removido.'
+                  : 'Você deixará de participar deste grupo e não poderá mais votar nele.'
+                : `Tem certeza que deseja remover ${confirmAction.name} deste grupo?`}
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setConfirmAction(null)}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="danger" onClick={confirmActionSubmit}>
+                {confirmAction.type === 'leave' ? 'Sair do grupo' : 'Remover'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {isInviteModalOpen && (
+      <Modal title="Convidar para o grupo" onClose={() => setIsInviteModalOpen(false)}>
+        <div className="grid gap-4">
+          <section className="grid gap-2 rounded-lg border border-line bg-surface-muted p-3">
+            <p className="text-sm font-semibold">Compartilhe o grupo</p>
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+              <code className="flex min-h-10 items-center truncate rounded-md border border-line bg-surface px-3 text-xs font-semibold leading-none text-ink">
+                {group.id}
+              </code>
+              <Button type="button" variant="secondary" onClick={copyGroupId}>
+                <Copy size={16} />
+                Copiar ID
+              </Button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+              <code className="flex min-h-10 items-center truncate rounded-md border border-line bg-surface px-3 text-xs font-semibold leading-none text-ink">
+                {inviteUrl}
+              </code>
+              <Button type="button" variant="secondary" onClick={copyInviteLink}>
+                <Link2 size={16} />
+                Copiar link
+              </Button>
+            </div>
+            <p className="text-xs text-muted">
+              O link leva a pessoa para este grupo. Se ela nao estiver logada, entra primeiro e depois volta para solicitar entrada.
+            </p>
+          </section>
+
+          {canManage && onInvite && (
+            <section className="grid gap-3 rounded-lg border border-line p-3">
+              <div>
+                <p className="text-sm font-semibold">Convidar amigos</p>
+                <p className="text-xs text-muted">Pesquise e selecione pessoas da sua lista de amigos.</p>
+              </div>
+              <Input
+                label="Buscar amigo"
+                name="friendSearch"
+                placeholder="Nome ou username"
+                type="search"
+                value={inviteFriendSearch}
+                onChange={(event) => setInviteFriendSearch(event.currentTarget.value)}
+              />
+              <div className="grid max-h-64 gap-2 overflow-y-auto pr-1">
+                {inviteFriends.length === 0 ? (
+                  <EmptyState title="Nenhum amigo disponivel" description="Amigos que nao estão no grupo aparecem aqui." />
+                ) : (
+                  inviteFriends.map((friendship) => {
+                    const username = friendship.friend.username!
+                    const selected = selectedInviteUsernames.has(username)
+
+                    return (
+                      <button
+                        key={friendship.friend.publicId}
+                        className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-left transition ${
+                          selected ? 'border-teal bg-teal-soft' : 'border-line hover:bg-teal-soft'
+                        }`}
+                        type="button"
+                        onClick={() => toggleInviteUsername(username)}
+                      >
+                        <span className="min-w-0">
+                          <strong className="block truncate text-sm">{friendship.friend.name}</strong>
+                          <small className="text-teal">@{username}</small>
+                        </span>
+                        <span className="grid size-7 place-items-center rounded-md border border-line">
+                          {selected && <Check size={16} />}
+                        </span>
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+              <Button disabled={selectedInviteUsernames.size === 0} type="button" onClick={sendSelectedInvites}>
+                <Send size={16} />
+                Enviar convites
+              </Button>
+            </section>
+          )}
+        </div>
+      </Modal>
+    )}
+    </>
   )
 }
 
@@ -788,13 +1010,13 @@ function FriendshipButton({
     return (
       <Button
         aria-label={`Enviado @${username}`}
-        className="size-11 border-amber-200 bg-amber-50 p-0 text-amber-800 hover:bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-200"
+        className="size-12 border-amber-200 bg-amber-50 p-0 text-amber-800 hover:bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-200"
         disabled
         title={`Enviado @${username}`}
         type="button"
         variant="secondary"
       >
-        <Clock3 size={21} strokeWidth={2.5} />
+        <Clock3 size={26} strokeWidth={2.7} />
       </Button>
     )
   }
@@ -802,14 +1024,14 @@ function FriendshipButton({
   return (
     <Button
       aria-label={`Adicionar @${username}`}
-      className="size-9 p-0"
+      className="size-12 p-0"
       disabled={isPending}
       title={`Adicionar @${username}`}
       type="button"
       variant="secondary"
       onClick={() => onRequestFriend(username)}
     >
-      <UserPlus size={22} strokeWidth={2.6} />
+      <UserPlus size={27} strokeWidth={2.7} />
     </Button>
   )
 }
@@ -898,6 +1120,10 @@ function geocodeComponent(
   return result.address_components.find((item) => item.types.includes(type))?.[nameKind]
 }
 
+function isGroupPublicId(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim())
+}
+
 function normalizeSearch(value: string) {
   return value
     .normalize('NFD')
@@ -913,6 +1139,7 @@ function Metric({ label, value }: { label: string; value: number }) {
     </span>
   )
 }
+
 
 
 

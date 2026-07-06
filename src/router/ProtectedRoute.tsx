@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import type { UserRole } from '../@types/User'
 import { useUserStore } from '../stores/userStore'
 
@@ -8,11 +8,14 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
+  const location = useLocation()
   const accessToken = useUserStore((state) => state.accessToken)
   const user = useUserStore((state) => state.user)
 
   if (!accessToken) {
-    return <Navigate to="/login" replace />
+    const returnTo = `${location.pathname}${location.search}`
+
+    return <Navigate to={`/login?returnTo=${encodeURIComponent(returnTo)}`} replace />
   }
 
   if (requiredRole && user?.role !== requiredRole) {
