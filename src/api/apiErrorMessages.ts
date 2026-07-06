@@ -1,0 +1,121 @@
+const errorMessages: Record<string, string> = {
+  'Active vote not found': 'Voce ainda nao votou nesse lugar nessa data.',
+  'Admin access required': 'Acesso permitido apenas para administradores.',
+  'At least one field must be provided': 'Informe pelo menos um campo para atualizar.',
+  'Authenticated user not found': 'Sessao invalida. Entre novamente.',
+  'Avatar file is required': 'Envie uma imagem para o avatar.',
+  'Avatar image is too large': 'A imagem do avatar e muito grande.',
+  'Avatar must be a JPEG, PNG or WEBP image': 'O avatar deve ser uma imagem JPEG, PNG ou WEBP.',
+  'Avatar not found': 'Avatar nao encontrado.',
+  'Avatar URL host is not allowed': 'A URL do avatar nao e permitida.',
+  'Avatar URL must use HTTPS': 'A URL do avatar precisa usar HTTPS.',
+  'Blocked members cannot rejoin without moderator action':
+    'Membros bloqueados nao podem voltar sem acao de um moderador.',
+  'Could not fetch avatar image': 'Nao foi possivel baixar a imagem do avatar.',
+  'Could not invite member': 'Nao foi possivel convidar o membro.',
+  'Could not remove member': 'Nao foi possivel remover o membro.',
+  'Date must be today or up to one month in the future':
+    'A data precisa ser hoje ou no maximo um mes no futuro.',
+  'Date range must be ordered and have at most 31 days':
+    'O periodo precisa estar em ordem e ter no maximo 31 dias.',
+  Forbidden: 'Voce nao tem permissao para fazer isso.',
+  'Friend request not found': 'Pedido de amizade nao encontrado.',
+  'Friendship is already accepted': 'Essa pessoa ja e sua amiga.',
+  'Friendship is already blocked': 'Essa amizade esta bloqueada.',
+  'Google OAuth is not configured': 'Login com Google ainda nao foi configurado.',
+  'Group not found': 'Grupo nao encontrado.',
+  'Group or member not found': 'Grupo ou membro nao encontrado.',
+  'Group or member request not found': 'Grupo ou pedido de membro nao encontrado.',
+  'Group or user not found': 'Grupo ou usuario nao encontrado.',
+  'Invalid avatar path': 'Caminho de avatar invalido.',
+  'Invalid credentials': 'Email, username ou senha incorretos.',
+  'Member request is not pending': 'Esse pedido de entrada nao esta pendente.',
+  'Only the account owner or an admin can delete this user':
+    'Apenas o dono da conta ou um admin pode excluir esse usuario.',
+  'Only the account owner or an admin can update this user':
+    'Apenas o dono da conta ou um admin pode atualizar esse usuario.',
+  'Only the group leader can accept members': 'Apenas o lider do grupo pode aceitar membros.',
+  'Only the group owner can invite members': 'Apenas o dono do grupo pode convidar membros.',
+  'Only the group owner can remove members': 'Apenas o dono do grupo pode remover membros.',
+  'Password must contain at least one special character':
+    'A senha precisa ter pelo menos um caractere especial.',
+  'Password must contain at least one uppercase letter':
+    'A senha precisa ter pelo menos uma letra maiuscula.',
+  'Place or group not found': 'Lugar ou grupo nao encontrado.',
+  'Resource not found': 'Recurso nao encontrado.',
+  'Sessao expirada. Entre novamente.': 'Sessao expirada. Entre novamente.',
+  'Too many login attempts. Try again later.':
+    'Muitas tentativas de login. Tente novamente em instantes.',
+  'User not found': 'Usuario nao encontrado.',
+  'User with same email already exists': 'Esse email ja esta em uso.',
+  'User with same username already exists': 'Esse username ja esta em uso.',
+  'Validation failed': 'Confira os campos informados.',
+  'latitude and longitude are required when radiusKm is provided':
+    'Latitude e longitude sao obrigatorias quando o raio e informado.',
+}
+
+const errorPatterns: Array<[RegExp, string]> = [
+  [/^User with same email .*exists$/i, 'Esse email ja esta em uso.'],
+  [/^User with same username .*exists$/i, 'Esse username ja esta em uso.'],
+  [/^Expected .+$/i, 'Valor informado em formato invalido.'],
+  [/^Invalid .+$/i, 'Valor informado invalido.'],
+  [/^Required$/i, 'Campo obrigatorio.'],
+  [/^Too small:/i, 'O valor informado e muito curto.'],
+  [/^Too big:/i, 'O valor informado e muito grande.'],
+  [/^Invalid input:/i, 'Valor informado invalido.'],
+  [/^Invalid enum value/i, 'Opcao informada invalida.'],
+  [/^Vote limit exceeded/i, 'Voce atingiu o limite de votos para esse dia.'],
+  [/^You can vote in at most (\d+) places per day$/i, 'Voce pode votar em no maximo $1 lugares por dia.'],
+]
+
+export function translateErrorMessage(message: string, status?: number) {
+  const trimmedMessage = message.trim()
+
+  if (errorMessages[trimmedMessage]) {
+    return errorMessages[trimmedMessage]
+  }
+
+  for (const [pattern, translation] of errorPatterns) {
+    if (pattern.test(trimmedMessage)) {
+      return trimmedMessage.replace(pattern, translation)
+    }
+  }
+
+  if (status === 400) {
+    return 'Confira os dados informados e tente novamente.'
+  }
+
+  if (status === 401) {
+    return 'Sessao expirada. Entre novamente.'
+  }
+
+  if (status === 403) {
+    return 'Voce nao tem permissao para fazer isso.'
+  }
+
+  if (status === 404) {
+    return 'Nao encontramos o que voce procurou.'
+  }
+
+  if (status === 409) {
+    return 'Essa acao entra em conflito com o estado atual.'
+  }
+
+  if (status === 429) {
+    return 'Muitas tentativas. Tente novamente em instantes.'
+  }
+
+  if (status && status >= 500) {
+    return 'Erro interno no servidor. Tente novamente em instantes.'
+  }
+
+  return trimmedMessage
+}
+
+export function translateApiMessage(message: string | string[], status?: number) {
+  if (Array.isArray(message)) {
+    return message.map((item) => translateErrorMessage(item, status)).join(', ')
+  }
+
+  return translateErrorMessage(message, status)
+}

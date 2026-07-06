@@ -39,13 +39,13 @@ export default function Home() {
   })
 
   const myGroupsQuery = useQuery({
-    enabled: Boolean(accessToken),
+    enabled: Boolean(accessToken && user),
     queryKey: ['my-groups'],
     queryFn: listMyGroups,
   })
 
   const myVotesQuery = useQuery({
-    enabled: Boolean(accessToken),
+    enabled: Boolean(accessToken && user),
     queryKey: ['my-votes'],
     queryFn: listMyVotes,
   })

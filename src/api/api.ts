@@ -1,6 +1,7 @@
 import type { InternalAxiosRequestConfig } from 'axios'
 import axios from 'axios'
 import { useUserStore } from '../stores/userStore'
+import { translateApiMessage, translateErrorMessage } from './apiErrorMessages'
 
 export const API_BASE_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:3333'
 
@@ -29,11 +30,13 @@ export type ApiErrorField = 'email' | 'username'
 
 export class ApiError extends Error {
   readonly field?: ApiErrorField
+  readonly status?: number
 
-  constructor(message: string, field?: ApiErrorField) {
+  constructor(message: string, field?: ApiErrorField, status?: number) {
     super(message)
     this.name = 'ApiError'
     this.field = field
+    this.status = status
   }
 }
 
@@ -47,7 +50,7 @@ const onRequest = (config: InternalAxiosRequestConfig) => {
   return config
 }
 
-const onResponseError = (error: unknown) => {
+const onResponseError = (options: { logoutOnUnauthorized?: boolean } = {}) => (error: unknown) => {
   if (axios.isAxiosError(error) && error.message === 'Network Error') {
     return Promise.reject(
       new Error(
@@ -57,6 +60,12 @@ const onResponseError = (error: unknown) => {
   }
 
   if (axios.isAxiosError(error)) {
+    const status = error.response?.status
+
+    if (status === 401 && options.logoutOnUnauthorized) {
+      useUserStore.getState().logout()
+    }
+
     const data = error.response?.data
     const message = data?.message ?? data?.error
     const field = data?.field
@@ -64,10 +73,15 @@ const onResponseError = (error: unknown) => {
     if (message) {
       return Promise.reject(
         new ApiError(
-          Array.isArray(message) ? message.join(', ') : message,
-          field === 'email' || field === 'username' ? field : undefined
+          translateApiMessage(message, status),
+          field === 'email' || field === 'username' ? field : undefined,
+          status
         )
       )
+    }
+
+    if (status) {
+      return Promise.reject(new ApiError(translateErrorMessage('', status), undefined, status))
     }
   }
 
@@ -75,5 +89,5 @@ const onResponseError = (error: unknown) => {
 }
 
 axiosPrivate.interceptors.request.use(onRequest, Promise.reject)
-axiosPublic.interceptors.response.use(undefined, onResponseError)
-axiosPrivate.interceptors.response.use(undefined, onResponseError)
+axiosPublic.interceptors.response.use(undefined, onResponseError())
+axiosPrivate.interceptors.response.use(undefined, onResponseError({ logoutOnUnauthorized: true }))
