@@ -23,8 +23,10 @@ export function OAuthCallback() {
 
     try {
       const user = decodeOAuthUser(encodedUser)
+      const returnTo = window.sessionStorage.getItem('onde-hoje:oauth-return-to')
+      window.sessionStorage.removeItem('onde-hoje:oauth-return-to')
       setUser({ accessToken: token, user })
-      navigate('/', { replace: true })
+      navigate(returnTo?.startsWith('/') ? returnTo : '/', { replace: true })
     } catch {
       setError('O retorno do Google veio incompleto. Tente entrar novamente.')
     }
@@ -40,7 +42,7 @@ export function OAuthCallback() {
         {error && <p className="mt-3 text-sm text-muted">{error}</p>}
         {error && (
           <Link
-            className="mt-5 inline-flex min-h-10 items-center justify-center rounded-lg bg-teal px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-dark"
+            className="mt-5 inline-flex min-h-10 items-center justify-center rounded-lg bg-teal px-4 py-2 text-sm font-medium text-on-teal transition hover:bg-teal-dark"
             to="/login"
           >
             Voltar para login

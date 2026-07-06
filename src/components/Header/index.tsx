@@ -72,7 +72,7 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
   }
 
   return (
-    <span className="grid size-8 place-items-center rounded-md bg-teal text-xs font-medium text-white">
+    <span className="grid size-8 place-items-center rounded-md bg-teal text-xs font-medium text-on-teal">
       {initials || 'U'}
     </span>
   )

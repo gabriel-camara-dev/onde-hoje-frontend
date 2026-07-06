@@ -30,8 +30,6 @@ export default function ProfilePage() {
       updateUser(user!.id, {
         name: String(form.get('name') || '') || undefined,
         username: String(form.get('username') || '') || undefined,
-        email: String(form.get('email') || '') || undefined,
-        password: String(form.get('password') || '') || undefined,
       }),
     onSuccess: (updatedUser) => updateStoredUser(updatedUser),
   })
@@ -99,6 +97,7 @@ export default function ProfilePage() {
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">
             Atualize suas informacoes publicas e a foto que aparece nos votos.
           </p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted">{user.email}</p>
           {user.username && (
             <span className="mt-4 inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-semibold text-teal">
               @{user.username}
@@ -122,7 +121,7 @@ export default function ProfilePage() {
                 <span>{initials || <Camera size={36} />}</span>
               )}
               <span className="absolute inset-0 grid place-items-center bg-black/55 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                <span className="grid h-12 w-12 place-items-center rounded-full bg-teal text-white shadow-lg">
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-teal text-on-teal shadow-lg">
                   <Plus size={30} strokeWidth={3} />
                 </span>
               </span>
@@ -148,9 +147,7 @@ export default function ProfilePage() {
                 pattern="[a-z0-9_]+"
                 defaultValue={user.username ?? ''}
               />
-              <Input label="Email" name="email" type="email" defaultValue={user.email} />
             </div>
-            <Input label="Nova senha" minLength={6} name="password" type="password" />
             <Button type="submit">
               Salvar perfil
             </Button>

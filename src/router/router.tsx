@@ -8,9 +8,9 @@ import History from '../pages/History'
 import Home from '../pages/Home'
 import { Login } from '../pages/Login'
 import { OAuthCallback } from '../pages/OAuthCallback'
-import Places from '../pages/Places'
 import Profile from '../pages/Profile'
 import Ranking from '../pages/Ranking'
+import { Register } from '../pages/Register'
 
 export const router = createBrowserRouter([
   {
@@ -18,10 +18,10 @@ export const router = createBrowserRouter([
     element: <DefaultLayout />,
     children: [
       { path: '', element: <Home /> },
-      { path: 'places', element: <Places /> },
       { path: 'ranking', element: <Ranking /> },
       { path: 'history', element: <History /> },
       { path: 'groups', element: <Groups /> },
+      { path: 'groups/:groupPublicId', element: <Groups /> },
       {
         path: 'friends',
         element: (
@@ -51,6 +51,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/register',
+    element: <Register />,
   },
   {
     path: '/auth/google/callback',

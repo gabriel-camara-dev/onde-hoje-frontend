@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Clock3, Trash2, UserPlus, X } from 'lucide-react'
+import { Check, Clock3, Copy, Link2, Trash2, UserPlus } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { resolveApiUrl } from '../../api/api'
 import type { FriendListItem, Group, MyGroup } from '../../@types/OndeHoje'
 import {
@@ -22,6 +23,7 @@ import {
 import Button from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import Input from '../../components/ui/Input'
+import { Modal } from '../../components/ui/Modal'
 import Select from '../../components/ui/Select'
 import { Panel } from '../../components/ui/Panel'
 import { StatusBanner } from '../../components/ui/StatusBanner'
@@ -36,6 +38,9 @@ type GroupTab = 'PUBLIC' | 'PRIVATE'
 
 export default function GroupsPage({ city = '' }: GroupsPageProps) {
   const queryClient = useQueryClient()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { groupPublicId } = useParams<{ groupPublicId: string }>()
   const user = useUserStore((state) => state.user)
   const [activeTab, setActiveTab] = useState<GroupTab>('PUBLIC')
   const [modal, setModal] = useState<'create' | 'join' | null>(null)
@@ -72,6 +77,15 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
       setActiveTab('PUBLIC')
     }
   }, [activeTab, user])
+
+  useEffect(() => {
+    if (!groupPublicId) {
+      return
+    }
+
+    setActiveTab('PUBLIC')
+    setSelectedGroupId(groupPublicId)
+  }, [groupPublicId])
 
   const groupsQuery = useQuery({
     queryKey: ['groups', groupsCity],
@@ -201,6 +215,14 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
   const joinedPublicGroupIds = new Set(
     myGroups.filter((group) => group.privacy === 'PUBLIC').map((group) => group.id)
   )
+  const selectedGroupInviteUrl = selectedGroup
+    ? `${window.location.origin}/groups/${selectedGroup.id}`
+    : ''
+
+  function loginForGroupInvite() {
+    const returnTo = `${location.pathname}${location.search}`
+    navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`)
+  }
 
   return (
     <>
@@ -328,6 +350,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
             currentUserPublicId={user?.id}
             friendByUsername={friendByUsername}
             group={selectedGroup}
+            inviteUrl={selectedGroupInviteUrl}
             isRequestingFriend={requestFriendshipMutation.isPending}
             requestedFriendUsernames={requestedFriendUsernames}
             onAccept={
@@ -344,6 +367,11 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
               'myRole' in selectedGroup || !user
                 ? undefined
                 : () => joinMutation.mutate({ groupPublicId: selectedGroup.id })
+            }
+            onLoginToJoin={
+              'myRole' in selectedGroup || user || selectedGroup.privacy !== 'PUBLIC'
+                ? undefined
+                : loginForGroupInvite
             }
             onRemove={
               'myRole' in selectedGroup
@@ -509,10 +537,12 @@ function GroupDetail({
   currentUserPublicId,
   friendByUsername,
   group,
+  inviteUrl,
   isRequestingFriend,
   onAccept,
   onInvite,
   onJoin,
+  onLoginToJoin,
   onRemove,
   onRequestFriend,
   requestedFriendUsernames,
@@ -520,10 +550,12 @@ function GroupDetail({
   currentUserPublicId?: string
   friendByUsername: Map<string, FriendListItem>
   group: MyGroup | PublicGroupDetails
+  inviteUrl: string
   isRequestingFriend?: boolean
   onAccept?: (username: string) => void
   onInvite?: (username: string) => void
   onJoin?: () => void
+  onLoginToJoin?: () => void
   onRemove?: (username: string) => void
   onRequestFriend: (username: string) => void
   requestedFriendUsernames: Set<string>
@@ -532,6 +564,28 @@ function GroupDetail({
   const isMember = 'myRole' in group && group.myStatus === 'ACTIVE'
   const pendingMembers = group.members.filter((member) => member.status === 'PENDING')
   const activeMembers = group.members.filter((member) => member.status === 'ACTIVE')
+
+  async function copyGroupId() {
+    try {
+      await navigator.clipboard.writeText(group.id)
+      toast.success('ID do grupo copiado.')
+    } catch {
+      toast.error('Nao foi possivel copiar o ID agora.')
+    }
+  }
+
+  async function copyInviteLink() {
+    if (!inviteUrl) {
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(inviteUrl)
+      toast.success('Link do grupo copiado.')
+    } catch {
+      toast.error('Nao foi possivel copiar o link agora.')
+    }
+  }
 
   function submitInvite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -547,13 +601,28 @@ function GroupDetail({
   return (
     <Panel>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="mb-2 text-xs font-semibold uppercase text-teal">
             {group.privacy === 'PRIVATE' ? 'Privado' : 'Publico'}
             {'myRole' in group ? ` - ${group.myRole}` : ''}
           </p>
           <h2 className="text-2xl font-semibold">{group.name}</h2>
           <p className="mt-2 text-sm text-muted">{group.description || 'Grupo sem descricao.'}</p>
+          <div className="mt-3 flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-muted p-2">
+            <span className="text-xs font-semibold uppercase text-muted">ID do grupo</span>
+            <code className="min-w-0 flex-1 truncate rounded-md bg-surface px-2 py-1 text-xs font-semibold text-ink">
+              {group.id}
+            </code>
+            <Button className="min-h-8 px-3 py-1.5 text-xs" type="button" variant="secondary" onClick={copyGroupId}>
+              <Copy size={15} />
+              Copiar
+            </Button>
+          </div>
+          <Button className="mt-3" type="button" variant="secondary" onClick={copyInviteLink}>
+            <Link2 size={17} />
+            Copiar link
+            <Copy size={15} />
+          </Button>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Metric label="membros" value={group.membersCount ?? activeMembers.length} />
@@ -561,12 +630,12 @@ function GroupDetail({
         </div>
       </div>
 
-      {onJoin && !isMember && group.privacy === 'PUBLIC' && (
+      {(onJoin || onLoginToJoin) && !isMember && group.privacy === 'PUBLIC' && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-muted p-3">
           <p className="text-sm text-muted">
             Voce pode entrar neste grupo e votar junto com as pessoas que ja participam dele.
           </p>
-          <Button type="button" onClick={onJoin} variant="secondary">
+          <Button type="button" onClick={onJoin ?? onLoginToJoin} variant="secondary">
             <UserPlus size={17} />
             Entrar no grupo
           </Button>
@@ -576,9 +645,9 @@ function GroupDetail({
       {canManage && (
         <form className="mb-5 grid gap-2 sm:grid-cols-[1fr_auto]" onSubmit={submitInvite}>
           <Input
-            label="Convidar por username"
+            label="Convidar"
             name="username"
-            placeholder="amigo_username"
+            placeholder="Username do seu amigo"
             required
           />
           <Button className="self-end" type="submit" variant="secondary">
@@ -765,33 +834,9 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
   }
 
   return (
-    <span className="grid size-10 place-items-center rounded-md bg-teal text-xs font-medium text-white">
+    <span className="grid size-10 place-items-center rounded-md bg-teal text-xs font-medium text-on-teal">
       {initials || 'U'}
     </span>
-  )
-}
-
-function Modal({
-  children,
-  onClose,
-  title,
-}: {
-  children: React.ReactNode
-  onClose: () => void
-  title: string
-}) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/55 px-4 py-6 backdrop-blur-sm">
-      <section className="grid w-full max-w-lg gap-4 rounded-lg border border-line bg-surface p-5 text-ink shadow-panel">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">{title}</h2>
-          <Button className="size-12 p-0" type="button" variant="ghost" onClick={onClose}>
-            <X size={26} strokeWidth={2.6} />
-          </Button>
-        </div>
-        {children}
-      </section>
-    </div>
   )
 }
 

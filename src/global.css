@@ -14,6 +14,7 @@
   --color-teal: var(--app-brand);
   --color-teal-dark: var(--app-brand-strong);
   --color-teal-soft: var(--app-brand-soft);
+  --color-on-teal: var(--app-on-brand);
   --color-coral: var(--app-brand);
   --color-amber: var(--app-accent);
   --shadow-panel: var(--app-shadow-panel);
@@ -32,6 +33,7 @@
   --app-brand: #0f766e;
   --app-brand-strong: #115e59;
   --app-brand-soft: #dfeee9;
+  --app-on-brand: #ffffff;
   --app-accent: #d79b2b;
   --app-shadow-panel: 0 10px 26px rgba(24, 35, 31, 0.08);
 }
@@ -49,106 +51,109 @@
   --app-brand: #5bc8b5;
   --app-brand-strong: #8ddccd;
   --app-brand-soft: #18332f;
+  --app-on-brand: #072823;
   --app-accent: #e0a83f;
   --app-shadow-panel: 0 14px 36px rgba(0, 0, 0, 0.28);
 }
 
-* {
-  box-sizing: border-box;
-}
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-html {
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  text-rendering: optimizeLegibility;
-}
+  html {
+    font-family:
+      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+    text-rendering: optimizeLegibility;
+  }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  background:
-    linear-gradient(rgba(23, 32, 29, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(23, 32, 29, 0.035) 1px, transparent 1px),
-    var(--app-paper);
-  background-size: 32px 32px;
-  color: var(--app-ink);
-  transition:
-    background-color 180ms ease,
-    color 180ms ease;
-}
+  body {
+    margin: 0;
+    min-width: 320px;
+    background:
+      linear-gradient(rgba(23, 32, 29, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(23, 32, 29, 0.035) 1px, transparent 1px),
+      var(--app-paper);
+    background-size: 32px 32px;
+    color: var(--app-ink);
+    transition:
+      background-color 180ms ease,
+      color 180ms ease;
+  }
 
-.dark body {
-  background:
-    linear-gradient(rgba(243, 238, 229, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(243, 238, 229, 0.035) 1px, transparent 1px),
-    var(--app-paper);
-  background-size: 32px 32px;
-}
+  .dark body {
+    background:
+      linear-gradient(rgba(243, 238, 229, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(243, 238, 229, 0.035) 1px, transparent 1px),
+      var(--app-paper);
+    background-size: 32px 32px;
+  }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 
-select {
-  min-height: 2.5rem;
-  width: 100%;
-  appearance: none;
-  border: 1px solid var(--app-line);
-  border-radius: 0.5rem;
-  background-color: var(--app-surface);
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--app-brand) 50%),
-    linear-gradient(135deg, var(--app-brand) 50%, transparent 50%);
-  background-position:
-    calc(100% - 18px) 50%,
-    calc(100% - 12px) 50%;
-  background-size:
-    6px 6px,
-    6px 6px;
-  background-repeat: no-repeat;
-  color: var(--app-ink);
-  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  outline: none;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease;
-}
+  select {
+    min-height: 2.5rem;
+    width: 100%;
+    appearance: none;
+    border: 1px solid var(--app-line);
+    border-radius: 0.5rem;
+    background-color: var(--app-surface);
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--app-brand) 50%),
+      linear-gradient(135deg, var(--app-brand) 50%, transparent 50%);
+    background-position:
+      calc(100% - 18px) 50%,
+      calc(100% - 12px) 50%;
+    background-size:
+      6px 6px,
+      6px 6px;
+    background-repeat: no-repeat;
+    color: var(--app-ink);
+    padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    outline: none;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background-color 160ms ease;
+  }
 
-select:hover {
-  border-color: color-mix(in srgb, var(--app-brand) 45%, var(--app-line));
-}
+  select:hover {
+    border-color: color-mix(in srgb, var(--app-brand) 45%, var(--app-line));
+  }
 
-select:focus,
-select:focus-visible {
-  border-color: var(--app-brand);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-brand) 18%, transparent);
-}
+  select:focus,
+  select:focus-visible {
+    border-color: var(--app-brand);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-brand) 18%, transparent);
+  }
 
-select:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
+  select:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
 
-select option {
-  background-color: var(--app-surface);
-  color: var(--app-ink);
-}
+  select option {
+    background-color: var(--app-surface);
+    color: var(--app-ink);
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-::selection {
-  background: var(--app-brand-soft);
-  color: var(--app-ink);
+  ::selection {
+    background: var(--app-brand-soft);
+    color: var(--app-ink);
+  }
 }
 
 .menu-overlay-enter {
@@ -183,9 +188,26 @@ a {
   }
 }
 
+.page-transition-enter {
+  animation: pageTransitionIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pageTransitionIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .menu-overlay-enter,
-  .menu-panel-enter {
+  .menu-panel-enter,
+  .page-transition-enter {
     animation: none;
   }
 }

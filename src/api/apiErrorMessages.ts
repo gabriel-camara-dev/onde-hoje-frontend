@@ -1,3 +1,5 @@
+export const EMAIL_NOT_VERIFIED_MESSAGE = 'Confirme seu email antes de entrar.'
+
 const errorMessages: Record<string, string> = {
   'Active vote not found': 'Voce ainda nao votou nesse lugar nessa data.',
   'Admin access required': 'Acesso permitido apenas para administradores.',
@@ -16,6 +18,8 @@ const errorMessages: Record<string, string> = {
   'Could not remove member': 'Nao foi possivel remover o membro.',
   'Date must be today or up to one month in the future':
     'A data precisa ser hoje ou no maximo um mes no futuro.',
+  'Email confirmation link not found or expired': 'Link de confirmacao invalido ou expirado.',
+  'Email not verified': EMAIL_NOT_VERIFIED_MESSAGE,
   'Date range must be ordered and have at most 31 days':
     'O periodo precisa estar em ordem e ter no maximo 31 dias.',
   Forbidden: 'Voce nao tem permissao para fazer isso.',
@@ -50,6 +54,7 @@ const errorMessages: Record<string, string> = {
   'User with same email already exists': 'Esse email ja esta em uso.',
   'User with same username already exists': 'Esse username ja esta em uso.',
   'Validation failed': 'Confira os campos informados.',
+  'You can vote for at most 3 places per day': 'Voce atingiu o limite de 3 votos nesse dia.',
   'latitude and longitude are required when radiusKm is provided':
     'Latitude e longitude sao obrigatorias quando o raio e informado.',
 }
@@ -65,7 +70,7 @@ const errorPatterns: Array<[RegExp, string]> = [
   [/^Invalid input:/i, 'Valor informado invalido.'],
   [/^Invalid enum value/i, 'Opcao informada invalida.'],
   [/^Vote limit exceeded/i, 'Voce atingiu o limite de votos para esse dia.'],
-  [/^You can vote in at most (\d+) places per day$/i, 'Voce pode votar em no maximo $1 lugares por dia.'],
+  [/^You can vote (?:in|for) at most (\d+) places per day$/i, 'Voce atingiu o limite de $1 votos nesse dia.'],
 ]
 
 export function translateErrorMessage(message: string, status?: number) {
@@ -98,7 +103,7 @@ export function translateErrorMessage(message: string, status?: number) {
   }
 
   if (status === 409) {
-    return 'Essa acao entra em conflito com o estado atual.'
+    return 'Nao foi possivel concluir essa acao agora. Atualize os dados e tente novamente.'
   }
 
   if (status === 429) {

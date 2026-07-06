@@ -4,10 +4,9 @@ import {
   LogIn,
   LogOut,
   MapPinned,
-  Search,
+  MessagesSquare,
   Shield,
   UserRound,
-  Users,
   UsersRound,
   X,
 } from 'lucide-react'
@@ -32,10 +31,9 @@ type AppMenuLink = {
 
 const links: AppMenuLink[] = [
   { href: '/', label: 'Mapa', icon: MapPinned },
-  { href: '/places', label: 'Lugares', icon: Search },
   { href: '/ranking', label: 'Ranking', icon: BarChart3 },
   { href: '/history', label: 'Historico', icon: Clock3 },
-  { href: '/groups', label: 'Grupos', icon: Users },
+  { href: '/groups', label: 'Grupos', icon: MessagesSquare },
   { href: '/friends', label: 'Amigos', icon: UsersRound, auth: 'authenticated' },
   { href: '/profile', label: 'Perfil', icon: UserRound, auth: 'authenticated' },
   { href: '/admin', label: 'Admin', icon: Shield, role: 'ADMIN' },
@@ -116,7 +114,7 @@ export function AppMenu({ isOpen, onClose, user }: AppMenuProps) {
           </Button>
         ) : (
           <Link
-            className="mt-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-teal px-4 text-sm font-semibold text-white transition hover:bg-teal-dark"
+            className="mt-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-teal px-4 text-sm font-semibold text-on-teal transition hover:bg-teal-dark"
             to="/login"
             onClick={onClose}
           >

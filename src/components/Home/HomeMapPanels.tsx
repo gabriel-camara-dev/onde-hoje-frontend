@@ -59,34 +59,34 @@ export function PlaceVoteDialog({
   selectedDay,
   selectedGroupPublicId,
 }: PlaceVoteDialogProps) {
+  const isFreeMapPoint = draftPlace?.googlePlaceId.startsWith('map-click:') ?? false
+  const dialogTitle = draftPlace ? (isFreeMapPoint ? 'Votar no lugar' : 'Votar no lugar') : 'Votar no lugar'
+  const placeTitle = draftPlace?.name ?? place?.name ?? 'Lugar selecionado'
+  const placeAddress = draftPlace?.formattedAddress ?? place?.formattedAddress
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/55 px-4 py-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 bg-black/55 px-3 py-4 backdrop-blur-sm">
       <div className="flex min-h-full items-end justify-center md:items-center">
         <section
           aria-modal="true"
-          className="grid max-h-[calc(100vh-3rem)] w-full max-w-2xl gap-4 overflow-y-auto rounded-lg border border-line bg-surface p-4 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)] md:p-6"
+          className="grid max-h-[calc(100vh-2rem)] w-full max-w-xl gap-3 overflow-y-auto rounded-lg border border-line bg-surface p-4 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)]"
           role="dialog"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase text-teal">
-                {draftPlace ? 'Novo ponto do mapa' : 'Lugar existente'}
-              </p>
-              <h2 className="mt-1 text-2xl font-semibold">{draftPlace?.name ?? place?.name}</h2>
-              <p className="mt-1 text-sm text-muted">
-                {draftPlace?.formattedAddress ?? place?.formattedAddress}
-              </p>
+          <div className="flex items-start justify-between gap-3 border-b border-line pb-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase text-teal">{dialogTitle}</p>
+              <h2 className="mt-1 truncate text-xl font-semibold">{placeTitle}</h2>
+              {placeAddress && <p className="mt-1 line-clamp-2 text-sm text-muted">{placeAddress}</p>}
             </div>
-            <Button type="button" variant="ghost" onClick={onClose}>
-              <X size={20} />
-            </Button>
-          </div>
-
-          <div className="rounded-lg border border-line bg-teal-soft p-3 text-sm text-ink/80">
-            {draftPlace
-              ? 'Clique em outro ponto do mapa para trocar a localizacao. Se o Google nao identificar o endereco, o ponto continua selecionado do mesmo jeito.'
-              : 'Esse lugar ja existe no mapa. Voce pode votar nele agora ou abrir outro marcador para trocar de selecao.'}
+            <button
+              aria-label="Fechar modal"
+              className="grid size-12 shrink-0 place-items-center rounded-md text-muted transition hover:bg-surface-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+              type="button"
+              onClick={onClose}
+            >
+              <X size={34} strokeWidth={2.8} />
+            </button>
           </div>
 
           {place && (
@@ -102,6 +102,7 @@ export function PlaceVoteDialog({
           <VotePanel
             groups={groups}
             hasUserVote={hasUserVote}
+            isFreeMapPoint={isFreeMapPoint}
             isNewPlace={Boolean(draftPlace)}
             isPending={isPending}
             maxDay={maxDay}
@@ -200,7 +201,7 @@ export function HomeSidebar({
               </b>
               <span className="min-w-0">
                 <strong className="block truncate text-sm">{place.name}</strong>
-                <small className="block truncate text-muted">{place.city ?? 'Sem cidade'}</small>
+                {place.city && <small className="block truncate text-muted">{place.city}</small>}
               </span>
               <em className="text-sm font-semibold not-italic text-teal">{place.voteCount}</em>
             </button>
@@ -215,6 +216,7 @@ function VotePanel({
   canChooseVoteType = true,
   groups,
   hasUserVote,
+  isFreeMapPoint,
   isNewPlace,
   isPending,
   maxDay,
@@ -231,6 +233,7 @@ function VotePanel({
   canChooseVoteType?: boolean
   groups: Array<{ id: string; name: string }>
   hasUserVote?: boolean
+  isFreeMapPoint?: boolean
   isNewPlace?: boolean
   isPending?: boolean
   maxDay: string
@@ -272,24 +275,31 @@ function VotePanel({
   }
 
   return (
-    <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-3 text-ink shadow-panel backdrop-blur">
-      <p className="mb-2 text-xs font-semibold uppercase text-teal">
-        {isNewPlace ? 'Novo lugar do Google Maps' : 'Lugar selecionado'}
-      </p>
-      <h2 className="text-2xl font-semibold">{placeName ?? 'Selecione um marcador'}</h2>
-      {subtitle && <p className="mt-2 text-sm text-muted">{subtitle}</p>}
+    <section className="pointer-events-auto text-ink">
       {voteCount !== undefined && (
-        <span className="mt-3 inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-semibold text-teal">
+        <span className="inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-semibold text-teal">
           {voteCount} votos em {formatDisplayDate(selectedDay)}
         </span>
       )}
       <form
-        className="mt-4 grid gap-3"
+        className="grid gap-3"
         onSubmit={(event) => {
           event.preventDefault()
           onSubmit(new FormData(event.currentTarget))
         }}
       >
+        {isFreeMapPoint && (
+          <Input
+            autoFocus
+            defaultValue=""
+            label="Nome do lugar"
+            maxLength={80}
+            minLength={2}
+            name="placeName"
+            placeholder="Ex: Quadra da praia, Escadaria, Mirante..."
+            required
+          />
+        )}
         <Input
           label="Dia"
           max={maxDay}
@@ -310,13 +320,13 @@ function VotePanel({
           ]}
         />
         {canChooseVoteType && (
-          <fieldset className="grid gap-2">
-            <legend className="text-xs font-medium text-muted">Tipo do voto</legend>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <fieldset>
+            <legend className="mb-3 block text-xs font-medium text-muted">Tipo do voto</legend>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
               {voteTypeOptions.map(({ icon: Icon, label, optionClassName, value }) => (
                 <label
                   key={value}
-                  className={`grid min-h-16 cursor-pointer place-items-center gap-1 rounded-lg border border-line bg-surface-muted px-2 py-2 text-xs font-semibold text-muted transition ${optionClassName}`}
+                  className={`grid min-h-14 cursor-pointer place-items-center gap-1 rounded-md border border-line bg-surface-muted px-2 py-2 text-xs font-semibold text-muted transition ${optionClassName}`}
                 >
                   <input
                     className="sr-only"
@@ -333,16 +343,16 @@ function VotePanel({
           </fieldset>
         )}
         <label className="grid gap-1.5 text-xs font-medium text-muted">
-          Nota
+          Nota opcional
           <textarea
-            className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
+            className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
             maxLength={240}
             name="note"
-            rows={3}
+            rows={2}
           />
         </label>
         <Button disabled={!placeName || isPending} type="submit">
-          {isNewPlace ? 'Salvar e votar' : 'Votar aqui'}
+          {isFreeMapPoint ? 'Salvar ponto e votar' : isNewPlace ? 'Salvar e votar' : 'Votar aqui'}
         </Button>
       </form>
     </section>
@@ -512,7 +522,7 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
   }
 
   return (
-    <span className="grid size-11 place-items-center rounded-lg bg-teal text-xs font-semibold text-white">
+    <span className="grid size-11 place-items-center rounded-lg bg-teal text-xs font-semibold text-on-teal">
       {initials || 'U'}
     </span>
   )

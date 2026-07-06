@@ -1,6 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { EMAIL_NOT_VERIFIED_MESSAGE } from '../../../api/apiErrorMessages'
+import { ResendConfirmationCard } from '../../../components/auth/ResendConfirmationCard'
 import Button from '../../../components/ui/Button'
 import Input from '../../../components/ui/Input'
 import { useAuth } from '../../../hooks/useAuth'
@@ -15,6 +17,7 @@ type LoginFormData = z.infer<typeof schema>
 export function LoginForm() {
   const {
     formState: { errors, isSubmitting },
+    getValues,
     handleSubmit,
     register,
     reset,
@@ -24,6 +27,8 @@ export function LoginForm() {
   })
 
   const { authenticate, isPending } = useAuth()
+  const isEmailNotVerified = errors.root?.message === EMAIL_NOT_VERIFIED_MESSAGE
+  const loginValue = getValues('login')
 
   const onSubmit = (data: LoginFormData) => {
     authenticate(
@@ -39,7 +44,6 @@ export function LoginForm() {
         {...register('login')}
         error={errors.login?.message}
         label="Email ou username"
-        placeholder="voce@email.com ou seu_username"
         required
       />
       <Input
@@ -50,6 +54,9 @@ export function LoginForm() {
         type="password"
       />
       {errors.root && <p className="text-sm font-medium text-red-700">{errors.root.message}</p>}
+      {isEmailNotVerified && (
+        <ResendConfirmationCard initialEmail={loginValue?.includes('@') ? loginValue : ''} />
+      )}
       <Button type="submit" disabled={isSubmitting || isPending}>
         {isPending ? 'Entrando...' : 'Entrar'}
       </Button>

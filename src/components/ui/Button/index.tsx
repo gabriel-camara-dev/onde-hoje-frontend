@@ -9,7 +9,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    'border border-transparent bg-teal text-white shadow-[0_8px_18px_rgba(15,118,110,.18)] hover:bg-teal-dark',
+    'border border-transparent bg-teal text-on-teal shadow-[0_8px_18px_rgba(15,118,110,.18)] hover:bg-teal-dark',
   secondary:
     'border border-line bg-surface text-ink hover:border-teal/45 hover:bg-teal-soft',
   ghost:

@@ -84,6 +84,7 @@ export function GooglePlacesMap({
   )
   const autocompleteRequestIdRef = useRef(0)
   const [error, setError] = useState('')
+  const [isMapReady, setIsMapReady] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [suggestions, setSuggestions] = useState<google.maps.places.PlacePrediction[]>([])
 
@@ -127,6 +128,7 @@ export function GooglePlacesMap({
         })
 
         mapRef.current = map
+        setIsMapReady(true)
         centerMapOnUserLocation({ silent: true })
 
         map.addListener('click', (event: google.maps.MapMouseEvent) => {
@@ -150,6 +152,8 @@ export function GooglePlacesMap({
       cancelled = true
       markersRef.current.forEach((marker) => marker.setMap(null))
       draftMarkerRef.current?.setMap(null)
+      mapRef.current = null
+      setIsMapReady(false)
     }
   }, [])
 
@@ -184,7 +188,7 @@ export function GooglePlacesMap({
     if (selected) {
       map.panTo({ lat: selected.latitude, lng: selected.longitude })
     }
-  }, [onPlaceSelected, places, selectedPlaceId])
+  }, [isMapReady, onPlaceSelected, places, selectedPlaceId])
 
   useEffect(() => {
     const trimmedCity = city?.trim()
@@ -201,7 +205,7 @@ export function GooglePlacesMap({
 
     lastAppliedCityRef.current = trimmedCity
     moveMapToCity(window.google, map, trimmedCity)
-  }, [city])
+  }, [city, isMapReady])
 
   function centerMapOnUserLocation(options: { silent?: boolean } = {}) {
     const map = mapRef.current
@@ -354,12 +358,12 @@ export function GooglePlacesMap({
     })
   }
 
-  function selectLatLngDraft(
+  async function selectLatLngDraft(
     googleApi: typeof google,
     map: google.maps.Map,
     latLng: google.maps.LatLng
   ) {
-    const draft = createDraftFromLatLng(latLng)
+    const draft = await createDraftFromLatLng(googleApi, latLng, city)
     searchMarkerRef.current?.setMap(null)
     draftMarkerRef.current?.setMap(null)
     draftMarkerRef.current = new googleApi.maps.Marker({
@@ -371,6 +375,11 @@ export function GooglePlacesMap({
     map.setZoom(16)
     setError('')
     onDraftSelectedRef.current(draft)
+    onLocationResolvedRef.current?.({
+      address: draft.formattedAddress,
+      city: draft.city,
+      state: draft.state,
+    })
   }
   function selectExistingPlace(place: MapPlace) {
     searchMarkerRef.current?.setMap(null)
@@ -684,19 +693,59 @@ function mapGooglePlace(
   }
 }
 
-function createDraftFromLatLng(latLng: google.maps.LatLng): GooglePlaceDraft {
+async function createDraftFromLatLng(
+  googleApi: typeof google,
+  latLng: google.maps.LatLng,
+  fallbackCity?: string
+): Promise<GooglePlaceDraft> {
   const latitude = latLng.lat()
   const longitude = latLng.lng()
   const coordinates = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
-
-  return {
+  const baseDraft = {
     googlePlaceId: `map-click:${latitude.toFixed(7)}:${longitude.toFixed(7)}`,
     name: 'Ponto selecionado',
     formattedAddress: coordinates,
     latitude,
     longitude,
+    city: fallbackCity?.trim() || undefined,
     mapsUrl: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
   }
+
+  try {
+    const result = await reverseGeocodeLatLng(googleApi, latLng)
+
+    if (!result) {
+      return baseDraft
+    }
+
+    return {
+      ...baseDraft,
+      formattedAddress: result.formatted_address || coordinates,
+      city:
+        geocodeComponent(result, 'administrative_area_level_2') ??
+        geocodeComponent(result, 'locality') ??
+        baseDraft.city,
+      state: geocodeComponent(result, 'administrative_area_level_1'),
+      country: geocodeComponent(result, 'country'),
+    }
+  } catch {
+    return baseDraft
+  }
+}
+
+function reverseGeocodeLatLng(googleApi: typeof google, latLng: google.maps.LatLng) {
+  return new Promise<google.maps.GeocoderResult | null>((resolve) => {
+    const geocoder = new googleApi.maps.Geocoder()
+
+    geocoder.geocode({ location: latLng }, (results, status) => {
+      if (status !== googleApi.maps.GeocoderStatus.OK || !results?.[0]) {
+        resolve(null)
+        return
+      }
+
+      resolve(results[0])
+    })
+  })
 }
 
 function component(place: google.maps.places.Place, type: string) {

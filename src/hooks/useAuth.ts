@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { authenticate } from '../api/ondeHoje'
 import { useUserStore } from '../stores/userStore'
 
@@ -12,12 +12,14 @@ export function useAuth() {
   const setUser = useUserStore((state) => state.setUser)
   const logoutUser = useUserStore.getState().logout
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnTo = searchParams.get('returnTo')
 
   const loginMutation = useMutation({
     mutationFn: (data: AuthData) => authenticate(data),
     onSuccess: ({ token, user }) => {
       setUser({ accessToken: token, user })
-      navigate('/')
+      navigate(returnTo && returnTo.startsWith('/') ? returnTo : '/')
     },
   })
 
@@ -29,9 +31,9 @@ export function useAuth() {
     try {
       await loginMutation.mutateAsync(data)
       reset()
-    } catch {
+    } catch (error) {
       setError('root', {
-        message: 'Email, username ou senha incorretos',
+        message: error instanceof Error ? error.message : 'Nao foi possivel entrar agora.',
       })
     }
   }

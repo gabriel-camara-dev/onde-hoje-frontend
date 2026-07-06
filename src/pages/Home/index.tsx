@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import {
   cancelVoteForPlace,
@@ -13,29 +12,37 @@ import {
   type MapFilters,
   voteForPlace,
 } from '../../api/ondeHoje'
-import type { MapPlace, VoteType } from '../../@types/OndeHoje'
+import type { MapPlace, VoteHistoryItem, VoteType } from '../../@types/OndeHoje'
+import { RequireAccountModal } from '../../components/auth/RequireAccountModal'
 import { GooglePlacesMap, type GooglePlaceDraft } from '../../components/GooglePlacesMap'
 import { formatInputDate } from '../../lib/date'
 import { useUserStore } from '../../stores/userStore'
 import { HomeSidebar, PlaceVoteDialog } from '../../components/Home/HomeMapPanels'
+import { loadHomeMapFilters, saveHomeMapFilters } from '../../components/Home/homeMapFiltersStorage'
 import { voteTypeOptions } from '../../components/Home/homeVoteTypeOptions'
 
 const today = formatInputDate(new Date())
 const maxVoteDay = formatInputDate(addMonths(new Date(), 1))
+const defaultMapFilters: MapFilters = { city: '', day: today, q: '' }
 
 export default function Home() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const accessToken = useUserStore((state) => state.accessToken)
   const user = useUserStore((state) => state.user)
-  const [filters, setFilters] = useState<MapFilters>({ city: '', day: today, q: '' })
+  const [filters, setFilters] = useState<MapFilters>(() => loadHomeMapFilters(defaultMapFilters))
   const [selectedPlace, setSelectedPlace] = useState<MapPlace>()
   const [draftPlace, setDraftPlace] = useState<GooglePlaceDraft>()
   const [requestedFriendUsernames, setRequestedFriendUsernames] = useState<Set<string>>(new Set())
+  const [showRequireAccountModal, setShowRequireAccountModal] = useState(false)
+
+  useEffect(() => {
+    saveHomeMapFilters(filters)
+  }, [filters])
 
   const mapQuery = useQuery({
     queryKey: ['today-map', filters],
     queryFn: () => getTodayMap(filters),
+    refetchOnMount: 'always',
   })
 
   const myGroupsQuery = useQuery({
@@ -53,6 +60,7 @@ export default function Home() {
   const topPlacesQuery = useQuery({
     queryKey: ['top-places', filters],
     queryFn: () => getTopPlaces({ ...filters, limit: 3 }),
+    refetchOnMount: 'always',
   })
 
   const places = useMemo(() => mapQuery.data ?? [], [mapQuery.data])
@@ -165,23 +173,23 @@ export default function Home() {
     selectedPlaceUserVote ??
     selectedPlaceForDay?.voters.some((voter) => voter.publicId === user?.id)
   )
-  const userVotesForSelectedDay = countUserVotesInPlaces(places, user?.id)
+  const userVotesForSelectedDay = countUserActiveVotesForDay(myVotesQuery.data, filters.day)
   const isVotingPending =
     voteMutation.isPending || createAndVoteMutation.isPending || cancelVoteMutation.isPending
 
   async function refreshVotingData() {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['today-map'] }),
-      queryClient.invalidateQueries({ queryKey: ['top-places'] }),
       queryClient.invalidateQueries({ queryKey: ['map-history'] }),
       queryClient.invalidateQueries({ queryKey: ['my-votes'] }),
       queryClient.invalidateQueries({ queryKey: ['places'] }),
+      queryClient.refetchQueries({ queryKey: ['today-map'], type: 'active' }),
+      queryClient.refetchQueries({ queryKey: ['top-places'], type: 'active' }),
     ])
   }
 
   function requireAuth() {
     if (!accessToken) {
-      navigate('/login?reason=vote')
+      setShowRequireAccountModal(true)
       return false
     }
 
@@ -243,9 +251,22 @@ export default function Home() {
       return
     }
 
+    const customPlaceName = String(form.get('placeName') || '').trim()
+    const shouldNameDraft = draftPlace.googlePlaceId.startsWith('map-click:')
+
+    if (shouldNameDraft && customPlaceName.length < 2) {
+      toast.error('De um nome para esse ponto do mapa.')
+      return
+    }
+
     createAndVoteMutation.mutate({
       day,
-      draft: draftPlace,
+      draft: shouldNameDraft
+        ? {
+            ...draftPlace,
+            name: customPlaceName,
+          }
+        : draftPlace,
       groupPublicId: String(form.get('groupPublicId') || '') || undefined,
       note: String(form.get('note') || '') || undefined,
       voteType: voteTypeFrom(form),
@@ -288,8 +309,30 @@ export default function Home() {
     setSelectedPlace(undefined)
   }
 
+  function selectPlace(place: MapPlace) {
+    if (!requireAuth()) {
+      return
+    }
+
+    setDraftPlace(undefined)
+    setSelectedPlace(place)
+  }
+
+  function selectDraft(place: GooglePlaceDraft) {
+    if (!requireAuth()) {
+      return
+    }
+
+    setSelectedPlace(undefined)
+    setDraftPlace(place)
+  }
+
   return (
     <>
+      {showRequireAccountModal && (
+        <RequireAccountModal onClose={() => setShowRequireAccountModal(false)} />
+      )}
+
       {(draftPlace || selectedPlace) && (
         <PlaceVoteDialog
           currentUserPublicId={user?.id}
@@ -327,12 +370,9 @@ export default function Home() {
           minMapDay={today}
           places={places}
           selectedPlaceId={selectedPlace?.id}
-          onDraftSelected={(place) => {
-            setDraftPlace(place)
-            setSelectedPlace(undefined)
-          }}
+          onDraftSelected={selectDraft}
           onLocationResolved={(location) => {
-            if (location.city && !filters.city) {
+            if (location.city && location.city !== filters.city) {
               setFilters((currentFilters) => ({
                 ...currentFilters,
                 city: location.city ?? currentFilters.city,
@@ -340,21 +380,10 @@ export default function Home() {
             }
           }}
           onMapDayChange={changeMapDay}
-          onPlaceSelected={(place) => {
-            setDraftPlace(undefined)
-            setSelectedPlace(place)
-          }}
+          onPlaceSelected={selectPlace}
         />
 
-        <HomeSidebar
-          errors={[
-            mapQuery.error?.message,
-            topPlacesQuery.error?.message,
-            voteMutation.error?.message,
-            createAndVoteMutation.error?.message,
-            cancelVoteMutation.error?.message,
-            requestFriendshipMutation.error?.message,
-          ]}
+        <HomeSidebar
           filters={filters}
           isLoading={
             mapQuery.isLoading ||
@@ -373,23 +402,19 @@ export default function Home() {
               groupPublicId,
             }))
           }}
-          onSelectPlace={(place) => {
-            setDraftPlace(undefined)
-            setSelectedPlace(place)
-          }}
+          onSelectPlace={selectPlace}
         />
       </div>
     </>
   )
 }
 
-function countUserVotesInPlaces(places: MapPlace[], userPublicId?: string) {
-  if (!userPublicId) {
+function countUserActiveVotesForDay(votes: VoteHistoryItem[] | undefined, day: string) {
+  if (!votes) {
     return 0
   }
 
-  return places.filter((place) => place.voters.some((voter) => voter.publicId === userPublicId))
-    .length
+  return votes.filter((vote) => dateOnly(vote.day) === day).length
 }
 
 function dateOnly(value: string) {

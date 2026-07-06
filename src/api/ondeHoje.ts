@@ -264,13 +264,15 @@ export async function updateUser(
   body: Partial<{
     name: string
     username: string
-    email: string
-    password: string
   }>
 ) {
   const response = await axiosPrivate.patch<User>(`/users/${publicId}`, body)
 
   return response.data
+}
+
+export async function resendEmailConfirmation(email: string) {
+  await axiosPublic.post('/users/email/confirmation', { email })
 }
 
 export async function deleteUser(publicId: string) {

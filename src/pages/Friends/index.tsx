@@ -94,7 +94,7 @@ export default function FriendsPage() {
             Solicite amizade pelo username da pessoa.
           </p>
           <form className="mt-5 grid gap-3" onSubmit={submit}>
-            <Input label="Username" name="username" placeholder="amigo_username" required />
+            <Input label="Username" name="username" placeholder="username" required />
             <Button type="submit">
               <UserPlus size={17} />
               Enviar pedido

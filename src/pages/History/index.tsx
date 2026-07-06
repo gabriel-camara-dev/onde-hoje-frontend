@@ -52,7 +52,7 @@ export default function HistoryPage() {
           <Clock3 className="mb-4 text-teal" size={28} />
           <h1 className="text-2xl font-semibold">Meu historico</h1>
           <p className="mt-2 text-sm text-muted">
-            Consulte seus votos recentes e veja onde voce marcou presenca.
+            Consulte seus votos recentes e veja onde voce marcou presença.
           </p>
           <form className="mt-5 grid gap-3" onSubmit={submit}>
             <Input label="De" name="from" type="date" defaultValue={range.from} />
