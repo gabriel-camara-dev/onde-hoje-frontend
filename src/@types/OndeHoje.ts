@@ -117,3 +117,120 @@ export type AdminDashboard = {
     votesCount: number
   }>
 }
+
+export type AdminDailyPoint = {
+  day: string
+  count: number
+}
+
+export type AdminOverview = {
+  users: {
+    total: number
+    newToday: number
+    newLast7Days: number
+    activeToday: number
+    activeLast7Days: number
+    verified: number
+    withGoogle: number
+    admins: number
+  }
+  votes: {
+    activeTotal: number
+    today: number
+    cancelledTotal: number
+    last7Days: number
+  }
+  places: {
+    activeTotal: number
+    newToday: number
+  }
+  groups: {
+    total: number
+    newToday: number
+  }
+  friendships: {
+    accepted: number
+    pending: number
+  }
+  reports: {
+    open: number
+    total: number
+  }
+  voteTypesToday: Array<{ voteType: VoteType; count: number }>
+  votesPerDay: AdminDailyPoint[]
+  signupsPerDay: AdminDailyPoint[]
+  topCitiesToday: Array<{ city: string; votes: number }>
+}
+
+export type AdminVoterStat = {
+  publicId: string
+  name: string
+  username: string
+  votesCount: number
+}
+
+export type AdminAbuseReport = {
+  topVotersToday: AdminVoterStat[]
+  topCancellersToday: Array<{
+    publicId: string
+    name: string
+    username: string
+    cancelledCount: number
+  }>
+  heavyVotersAllTime: AdminVoterStat[]
+  suspiciousLogins: Array<{
+    publicId: string
+    name: string
+    username: string
+    loginAttempts: number
+    lastLogin: string | null
+  }>
+  reportedPlaces: Array<{
+    publicId: string
+    name: string
+    city: string | null
+    openReports: number
+  }>
+  recentReports: Array<{
+    publicId: string
+    reason: string
+    status: string
+    placeName: string | null
+    reporterName: string
+    createdAt: string
+  }>
+}
+
+export type AdminUserSummary = {
+  publicId: string
+  name: string
+  username: string
+  email: string
+  role: string
+  lastLogin: string | null
+  createdAt: string
+  emailVerified: boolean
+}
+
+export type AdminUserHistory = {
+  user: AdminUserSummary
+  votes: VoteHistoryItem[]
+}
+
+export type AdminAuthActivity = {
+  loginsToday: number
+  failedToday: number
+  unknownUserToday: number
+  blockedToday: number
+  uniqueUsersToday: number
+  loginsPerDay: AdminDailyPoint[]
+  statusBreakdown: Array<{ status: string; count: number }>
+  topFailedIps: Array<{ ipAddress: string; attempts: number }>
+  recentAttempts: Array<{
+    status: string
+    ipAddress: string | null
+    userAgent: string | null
+    userName: string | null
+    createdAt: string
+  }>
+}

@@ -1,10 +1,20 @@
+import { useState } from 'react'
 import { Panel } from '../../components/ui/Panel'
-import { StatusBanner } from '../../components/ui/StatusBanner'
-import { DashboardOverview, TopPlacesPanel, UsersPanel } from './components'
-import { useAdmin } from './hooks/useAdmin'
+import { useUserStore } from '../../stores/userStore'
+import { AbuseTab, AuthTab, OverviewTab, TabButton, UsersTab } from './components'
+
+type AdminTab = 'overview' | 'abuse' | 'auth' | 'users'
+
+const tabs: Array<{ id: AdminTab; label: string }> = [
+  { id: 'overview', label: 'Visão geral' },
+  { id: 'abuse', label: 'Fiscalização' },
+  { id: 'auth', label: 'Autenticação' },
+  { id: 'users', label: 'Usuários' },
+]
 
 export default function AdminPage() {
-  const { user, dashboard, users, usersTotal, error, isLoading, onFilter } = useAdmin()
+  const user = useUserStore((state) => state.user)
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview')
 
   if (!user) {
     return (
@@ -18,17 +28,30 @@ export default function AdminPage() {
   }
 
   return (
-    <>
-      <StatusBanner error={error} loading={isLoading} />
-      {dashboard && (
-        <section className="grid gap-4">
-          <DashboardOverview dashboard={dashboard} />
-          <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
-            <TopPlacesPanel places={dashboard.topPlaces} />
-            <UsersPanel users={users} total={usersTotal} onFilter={onFilter} />
-          </div>
-        </section>
-      )}
-    </>
+    <section className="grid gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold">Painel administrativo</h1>
+        <p className="mt-1 text-sm text-muted">
+          Métricas do sistema, fiscalização de votos e gestão de usuários.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-1 rounded-lg border border-line bg-surface-muted p-1">
+        {tabs.map((tab) => (
+          <TabButton
+            key={tab.id}
+            active={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </TabButton>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && <OverviewTab />}
+      {activeTab === 'abuse' && <AbuseTab />}
+      {activeTab === 'auth' && <AuthTab />}
+      {activeTab === 'users' && <UsersTab />}
+    </section>
   )
 }

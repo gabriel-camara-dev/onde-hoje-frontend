@@ -1,5 +1,9 @@
 import type {
+  AdminAbuseReport,
+  AdminAuthActivity,
   AdminDashboard,
+  AdminOverview,
+  AdminUserHistory,
   FriendListItem,
   Group,
   MyGroup,
@@ -258,12 +262,18 @@ export async function rejectFriendship(username: string) {
   await axiosPrivate.post(`/friends/${username}/reject`)
 }
 
-export async function listUsers(params: { page?: number; name?: string; email?: string }) {
+export async function listUsers(params: {
+  page?: number
+  name?: string
+  email?: string
+  username?: string
+}) {
   const response = await axiosPrivate.get<ListUsersResponse>('/users', {
     params: compactParams({
       page: params.page ?? 1,
       name: params.name,
       email: params.email,
+      username: params.username,
     }),
   })
 
@@ -303,6 +313,32 @@ export async function uploadAvatar(file: File) {
 
 export async function getAdminDashboard() {
   const response = await axiosPrivate.get<AdminDashboard>('/admin/onde-hoje/dashboard')
+
+  return response.data
+}
+
+export async function getAdminOverview() {
+  const response = await axiosPrivate.get<AdminOverview>('/admin/onde-hoje/overview')
+
+  return response.data
+}
+
+export async function getAdminAbuseReport() {
+  const response = await axiosPrivate.get<AdminAbuseReport>('/admin/onde-hoje/abuse')
+
+  return response.data
+}
+
+export async function getAdminAuthActivity() {
+  const response = await axiosPrivate.get<AdminAuthActivity>('/admin/onde-hoje/auth-activity')
+
+  return response.data
+}
+
+export async function getUserVoteHistory(publicId: string) {
+  const response = await axiosPrivate.get<AdminUserHistory>(
+    `/admin/onde-hoje/users/${publicId}/history`
+  )
 
   return response.data
 }
