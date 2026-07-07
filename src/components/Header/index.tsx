@@ -1,9 +1,9 @@
 import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { resolveApiUrl } from '../../api/api'
 import { useUserStore } from '../../stores/userStore'
 import { AppMenu } from '../AppMenu'
+import { Avatar } from '../Avatar'
 import { ThemeToggle } from '../ThemeToggle'
 import Button from '../ui/Button'
 
@@ -34,7 +34,7 @@ export default function Header() {
               type="button"
               onClick={() => setIsMenuOpen(true)}
             >
-              <Avatar name={user.name} src={user.avatarUrl} />
+              <Avatar name={user.name} src={user.avatarUrl} className="size-8 rounded-md" />
               <span className="hidden max-w-36 truncate pr-1 md:inline">{user.name}</span>
             </button>
           ) : (
@@ -48,33 +48,6 @@ export default function Header() {
 
       <AppMenu isOpen={isMenuOpen} user={user} onClose={() => setIsMenuOpen(false)} />
     </>
-  )
-}
-
-function Avatar({ name, src }: { name: string; src?: string | null }) {
-  const avatarSrc = resolveApiUrl(src)
-  const initials = name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-
-  if (avatarSrc) {
-    return (
-      <img
-        alt=""
-        className="size-8 rounded-md border border-line object-cover"
-        referrerPolicy="no-referrer"
-        src={avatarSrc}
-      />
-    )
-  }
-
-  return (
-    <span className="grid size-8 place-items-center rounded-md bg-teal text-xs font-medium text-on-teal">
-      {initials || 'U'}
-    </span>
   )
 }
 

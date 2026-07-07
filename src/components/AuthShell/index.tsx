@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { PageTransition } from '../../components/PageTransition'
+import { PageTransition } from '../PageTransition'
 
 type AuthShellProps = {
   title: string

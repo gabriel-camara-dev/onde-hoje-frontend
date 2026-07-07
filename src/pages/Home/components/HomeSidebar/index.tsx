@@ -1,0 +1,99 @@
+import { CalendarDays, Navigation, TrendingUp, Vote } from 'lucide-react'
+import type { Group, MapPlace } from '../../../../@types/OndeHoje'
+import type { MapFilters } from '../../../../api/ondeHoje'
+import Select from '../../../../components/ui/Select'
+import { StatusBanner } from '../../../../components/ui/StatusBanner'
+import { formatDisplayDate } from '../../../../lib/date'
+import { Metric } from '../Metric'
+
+type HomeSidebarProps = {
+  errors?: Array<string | undefined>
+  filters: MapFilters
+  isLoading?: boolean
+  groups: Group[]
+  topPlaces: MapPlace[]
+  userVotesForSelectedDay: number
+  onGroupChange: (groupPublicId?: string) => void
+  onSelectPlace: (place: MapPlace) => void
+}
+
+export function HomeSidebar({
+  errors = [],
+  filters,
+  isLoading,
+  groups,
+  topPlaces,
+  userVotesForSelectedDay,
+  onGroupChange,
+  onSelectPlace,
+}: HomeSidebarProps) {
+  return (
+    <aside className="grid content-start gap-3 p-3 md:pointer-events-none md:absolute md:right-4 md:top-4 md:z-20 md:w-[332px] md:p-0">
+      <StatusBanner error={errors.find(Boolean)} loading={isLoading} />
+
+      <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-3 text-ink shadow-panel backdrop-blur">
+        <p className="inline-flex items-center gap-2 rounded-full bg-teal-soft px-3 py-1 text-xs font-semibold text-teal">
+          <Navigation size={14} />
+          mapa principal
+        </p>
+        <h1 className="mt-3 text-2xl font-semibold leading-tight">Veja onde a galera vai hoje.</h1>
+        <p className="mt-2 text-sm text-muted">
+          Busque um lugar no Google Maps, salve na base e vote. Lugares com votos aparecem como
+          marcadores reais no mapa.
+        </p>
+
+        <div className="mt-4">
+          <Select
+            label="Filtrar por grupo"
+            options={[
+              { label: 'Todos os meus grupos', value: '' },
+              ...groups.map((group) => ({ label: group.name, value: group.id })),
+            ]}
+            value={filters.groupPublicId ?? ''}
+            onChange={(nextValue) => onGroupChange(nextValue || undefined)}
+          />
+          {groups.length === 0 && (
+            <span className="mt-1.5 block text-xs text-muted">
+              Entre em um grupo para filtrar o mapa por ele.
+            </span>
+          )}
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Metric icon={Vote} label="meus votos" value={userVotesForSelectedDay} />
+          <Metric icon={CalendarDays} label="limite" value={3} />
+        </div>
+      </section>
+
+      <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-2.5 text-ink shadow-panel backdrop-blur">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h2 className="inline-flex min-w-0 items-center gap-2 text-base font-semibold">
+            <TrendingUp size={18} />
+            Mais votados
+          </h2>
+          <span className="shrink-0 text-xs font-medium text-muted">
+            {formatDisplayDate(filters.day)}
+          </span>
+        </div>
+        <div className="grid gap-2">
+          {topPlaces.map((place, index) => (
+            <button
+              key={place.id}
+              className="grid grid-cols-[26px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-line p-2 text-left transition hover:bg-teal-soft"
+              type="button"
+              onClick={() => onSelectPlace(place)}
+            >
+              <b className="grid size-6 place-items-center rounded-lg bg-amber text-sm text-ink">
+                {index + 1}
+              </b>
+              <span className="min-w-0">
+                <strong className="block truncate text-sm">{place.name}</strong>
+                {place.city && <small className="block truncate text-muted">{place.city}</small>}
+              </span>
+              <em className="text-sm font-semibold not-italic text-teal">{place.voteCount}</em>
+            </button>
+          ))}
+        </div>
+      </section>
+    </aside>
+  )
+}

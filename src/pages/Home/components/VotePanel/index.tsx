@@ -1,0 +1,190 @@
+import { LoaderCircle } from 'lucide-react'
+import Button from '../../../../components/ui/Button'
+import Input from '../../../../components/ui/Input'
+import Select from '../../../../components/ui/Select'
+import { formatDisplayDate } from '../../../../lib/date'
+import { voteTypeOptions } from '../../homeVoteTypeOptions'
+
+type VotePanelProps = {
+  canChooseVoteType?: boolean
+  groups: Array<{ id: string; name: string }>
+  hasUserVote?: boolean
+  isFreeMapPoint?: boolean
+  isNewPlace?: boolean
+  isPending?: boolean
+  maxDay: string
+  minDay: string
+  onDayChange: (day: string) => void
+  onCancelVote: (form: FormData) => void
+  onSubmit: (form: FormData) => void
+  googlePlaceName?: string | null
+  placeName?: string
+  selectedDay: string
+  selectedGroupPublicId?: string
+  subtitle?: string
+  voteCount?: number
+}
+
+export function VotePanel({
+  canChooseVoteType = true,
+  groups,
+  hasUserVote,
+  isFreeMapPoint,
+  isNewPlace,
+  isPending,
+  maxDay,
+  minDay,
+  onDayChange,
+  onCancelVote,
+  onSubmit,
+  googlePlaceName,
+  placeName,
+  selectedDay,
+  selectedGroupPublicId,
+  subtitle,
+  voteCount,
+}: VotePanelProps) {
+  const submitLabel = isFreeMapPoint
+    ? 'Salvar ponto e votar'
+    : isNewPlace
+      ? 'Salvar e votar'
+      : 'Votar aqui'
+  const pendingLabel = isFreeMapPoint
+    ? 'Salvando ponto e votando...'
+    : isNewPlace
+      ? 'Salvando lugar e votando...'
+      : 'Registrando voto...'
+  const pendingMessage = isFreeMapPoint
+    ? 'Estamos salvando o ponto no mapa e confirmando seu voto. Isso pode levar alguns segundos.'
+    : isNewPlace
+      ? 'Estamos salvando o lugar e confirmando seu voto. Isso pode levar alguns segundos.'
+      : 'Estamos confirmando seu voto. Isso pode levar alguns segundos.'
+
+  if (hasUserVote && !isNewPlace) {
+    return (
+      <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-3 text-ink shadow-panel backdrop-blur">
+        <p className="mb-2 text-xs font-semibold uppercase text-teal">Seu voto</p>
+        <h2 className="text-2xl font-semibold">{placeName ?? 'Lugar selecionado'}</h2>
+        {subtitle && <p className="mt-2 text-sm text-muted">{subtitle}</p>}
+        {voteCount !== undefined && (
+          <span className="mt-3 inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-semibold text-teal">
+            {voteCount} votos em {formatDisplayDate(selectedDay)}
+          </span>
+        )}
+        <form
+          className="mt-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            onCancelVote(new FormData(event.currentTarget))
+          }}
+        >
+          <input name="day" type="hidden" value={selectedDay} />
+          <Button disabled={!placeName || isPending} type="submit" variant="danger">
+            {isPending && <LoaderCircle className="animate-spin" size={17} />}
+            {isPending ? 'Removendo voto...' : 'Tirar meu voto'}
+          </Button>
+        </form>
+      </section>
+    )
+  }
+
+  return (
+    <section className="pointer-events-auto text-ink">
+      {voteCount !== undefined && (
+        <span className="inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-semibold text-teal">
+          {voteCount} votos em {formatDisplayDate(selectedDay)}
+        </span>
+      )}
+      <form
+        aria-busy={isPending}
+        className="grid gap-3"
+        onSubmit={(event) => {
+          event.preventDefault()
+          onSubmit(new FormData(event.currentTarget))
+        }}
+      >
+        {isPending && (
+          <div
+            aria-live="polite"
+            className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-200"
+          >
+            <LoaderCircle className="mt-0.5 shrink-0 animate-spin" size={18} />
+            <span>{pendingMessage}</span>
+          </div>
+        )}
+        <fieldset className="grid gap-3" disabled={isPending}>
+          {isNewPlace && (
+            <Input
+              autoFocus
+              defaultValue=""
+              label="Apelido do lugar"
+              maxLength={80}
+              minLength={2}
+              name="placeNickname"
+              placeholder={
+                googlePlaceName
+                  ? 'Ex: Role depois do trampo'
+                  : 'Ex: Quadra da praia, Escadaria, Mirante...'
+              }
+            />
+          )}
+          <Input
+            label="Dia"
+            max={maxDay}
+            min={minDay}
+            name="day"
+            required
+            type="date"
+            value={selectedDay}
+            onChange={(event) => onDayChange(event.currentTarget.value)}
+          />
+          <Select
+            defaultValue={selectedGroupPublicId ?? ''}
+            label="Grupo"
+            name="groupPublicId"
+            options={[
+              { label: 'Publico', value: '' },
+              ...groups.map((group) => ({ label: group.name, value: group.id })),
+            ]}
+          />
+          {canChooseVoteType && (
+            <fieldset disabled={isPending}>
+              <legend className="mb-3 block text-xs font-medium text-muted">Tipo do voto</legend>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                {voteTypeOptions.map(({ icon: Icon, label, optionClassName, value }) => (
+                  <label
+                    key={value}
+                    className={`grid min-h-14 cursor-pointer place-items-center gap-1 rounded-md border border-line bg-surface-muted px-2 py-2 text-xs font-semibold text-muted transition ${optionClassName}`}
+                  >
+                    <input
+                      className="sr-only"
+                      defaultChecked={value === 'GENERAL'}
+                      name="voteType"
+                      type="radio"
+                      value={value}
+                    />
+                    <Icon size={18} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+          <label className="grid gap-1.5 text-xs font-medium text-muted">
+            Nota opcional
+            <textarea
+              className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
+              maxLength={240}
+              name="note"
+              rows={2}
+            />
+          </label>
+          <Button disabled={!placeName || isPending} type="submit">
+            {isPending && <LoaderCircle className="animate-spin" size={17} />}
+            {isPending ? pendingLabel : submitLabel}
+          </Button>
+        </fieldset>
+      </form>
+    </section>
+  )
+}

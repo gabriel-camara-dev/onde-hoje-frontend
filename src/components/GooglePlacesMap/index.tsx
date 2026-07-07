@@ -71,6 +71,7 @@ export function GooglePlacesMap({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const mapRef = useRef<google.maps.Map | null>(null)
   const markersRef = useRef<google.maps.Marker[]>([])
+  const highlightIntervalRef = useRef<number | null>(null)
   const draftMarkerRef = useRef<google.maps.Marker | null>(null)
   const searchMarkerRef = useRef<google.maps.Marker | null>(null)
   const onDraftSelectedRef = useRef(onDraftSelected)
@@ -157,6 +158,10 @@ export function GooglePlacesMap({
       if (autocompleteDebounceRef.current) {
         window.clearTimeout(autocompleteDebounceRef.current)
       }
+      if (highlightIntervalRef.current) {
+        window.clearInterval(highlightIntervalRef.current)
+        highlightIntervalRef.current = null
+      }
       markersRef.current.forEach((marker) => marker.setMap(null))
       draftMarkerRef.current?.setMap(null)
       mapRef.current = null
@@ -171,14 +176,41 @@ export function GooglePlacesMap({
       return
     }
 
+    if (highlightIntervalRef.current) {
+      window.clearInterval(highlightIntervalRef.current)
+      highlightIntervalRef.current = null
+    }
+
     markersRef.current.forEach((marker) => marker.setMap(null))
+
+    const topPlaceIds = computeTopPlaceIds(places)
+    const animatedMarkers: Array<{ marker: google.maps.Marker; frames: google.maps.Icon[] }> = []
+
     markersRef.current = places.map((place) => {
+      const highlighted = topPlaceIds.has(place.id)
       const marker = new window.google.maps.Marker({
-        icon: createVoteMarkerIcon(window.google, place.dominantVoteType, place.voteCount),
+        icon: createVoteMarkerIcon(window.google, place.dominantVoteType, place.voteCount, {
+          highlighted,
+        }),
         map,
         position: { lat: place.latitude, lng: place.longitude },
-        title: `${place.name} (${place.voteCount} votos)`,
+        title: highlighted
+          ? `${place.name} (${place.voteCount} votos) - Top do dia`
+          : `${place.name} (${place.voteCount} votos)`,
+        zIndex: highlighted ? 1000 : undefined,
       })
+
+      if (highlighted) {
+        animatedMarkers.push({
+          marker,
+          frames: GLOW_FRAMES.map((glow) =>
+            createVoteMarkerIcon(window.google, place.dominantVoteType, place.voteCount, {
+              highlighted: true,
+              glow,
+            })
+          ),
+        })
+      }
 
       marker.addListener('click', () => {
         suppressNextMapClickRef.current = true
@@ -186,6 +218,15 @@ export function GooglePlacesMap({
       })
       return marker
     })
+
+    if (animatedMarkers.length > 0) {
+      let frameIndex = 0
+      highlightIntervalRef.current = window.setInterval(() => {
+        frameIndex = (frameIndex + 1) % GLOW_FRAMES.length
+        animatedMarkers.forEach(({ marker, frames }) => marker.setIcon(frames[frameIndex]))
+      }, 130)
+    }
+
     updateExistingMarkersVisibility(map, markersRef.current)
 
     const selected = selectedPlaceId
@@ -586,14 +627,14 @@ export function GooglePlacesMap({
       <div ref={mapElementRef} className="absolute inset-0" />
       <div className="absolute left-3 right-3 top-3 z-10 grid gap-2 sm:left-4 sm:right-4 sm:top-4 md:left-6 md:right-auto md:w-[720px]">
         <form
-          className="grid grid-cols-2 gap-2 rounded-lg border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto_auto]"
+          className="grid grid-cols-6 gap-2 rounded-lg border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto_auto]"
           onSubmit={submitSearch}
         >
-          <label className="col-span-2 grid min-h-11 grid-cols-[20px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 text-xs font-medium text-muted sm:col-span-4 lg:col-span-1">
+          <label className="col-span-6 grid min-h-10 grid-cols-[20px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 text-xs font-medium text-muted sm:col-span-4 sm:min-h-11 lg:col-span-1">
             <CalendarDays size={17} />
             <input
               aria-label="Dia do mapa"
-              className="min-h-11 min-w-0 bg-transparent text-sm font-semibold text-ink outline-none"
+              className="min-h-10 min-w-0 bg-transparent text-sm font-semibold text-ink outline-none sm:min-h-11"
               max={maxMapDay}
               min={minMapDay}
               name="mapDay"
@@ -602,11 +643,11 @@ export function GooglePlacesMap({
               onChange={(event) => onMapDayChange(event.currentTarget.value)}
             />
           </label>
-          <label className="col-span-2 grid min-w-0 grid-cols-[24px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 sm:col-span-1">
+          <label className="col-span-6 grid min-w-0 grid-cols-[24px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 sm:col-span-1">
             <Search className="text-muted" size={19} />
             <input
               ref={searchInputRef}
-              className="min-h-11 min-w-0 bg-transparent text-sm font-semibold text-ink outline-none placeholder:text-muted/70"
+              className="min-h-10 min-w-0 bg-transparent text-sm font-semibold text-ink outline-none placeholder:text-muted/70 sm:min-h-11"
               placeholder="Busque um lugar..."
               onChange={(event) => queueAutocompleteSuggestions(event.currentTarget.value)}
               onFocus={(event) => fetchAutocompleteSuggestions(event.currentTarget.value)}
@@ -618,15 +659,22 @@ export function GooglePlacesMap({
             />
           </label>
           <Button
-            className="min-h-11 px-4"
+            className="col-span-2 min-h-10 px-2 sm:col-span-1 sm:min-h-11 sm:px-4"
             disabled={isSearching}
             type="submit"
             variant="secondary"
           >
-            {isSearching ? 'Buscando...' : 'Buscar'}
+            {isSearching ? (
+              <>
+                <span className="sm:hidden">...</span>
+                <span className="hidden sm:inline">Buscando...</span>
+              </>
+            ) : (
+              'Buscar'
+            )}
           </Button>
           <Button
-            className="min-h-11 px-4"
+            className="col-span-2 min-h-10 px-2 sm:col-span-1 sm:min-h-11 sm:px-4"
             disabled={!searchDraft || isSearching}
             type="button"
             onClick={voteSearchDraft}
@@ -635,13 +683,13 @@ export function GooglePlacesMap({
             Votar
           </Button>
           <Button
-            className="col-span-2 min-h-11 px-4 sm:col-span-1"
+            className="col-span-2 min-h-10 px-2 sm:col-span-1 sm:min-h-11 sm:px-4"
             type="button"
             variant="secondary"
             onClick={locateUser}
           >
             <LocateFixed size={17} />
-            <span className="sm:hidden">Localizar</span>
+            <span className="sm:hidden">Local</span>
           </Button>
         </form>
         {suggestions.length > 0 && (
@@ -666,7 +714,7 @@ export function GooglePlacesMap({
             ))}
           </div>
         )}
-        <div className="rounded-xl border border-line bg-surface/90 px-4 py-2 text-xs font-medium text-muted shadow-panel backdrop-blur">
+        <div className="hidden rounded-xl border border-line bg-surface/90 px-4 py-2 text-xs font-medium text-muted shadow-panel backdrop-blur sm:block">
           Pesquise um local, clique em um lugar do Google Maps ou clique em qualquer ponto do mapa.
         </div>
         {error && (
@@ -679,14 +727,72 @@ export function GooglePlacesMap({
   )
 }
 
-function createVoteMarkerIcon(googleApi: typeof google, voteType: VoteType, voteCount: number) {
+// Fases do brilho pulsante aplicado ao marcador mais votado do dia.
+const GLOW_FRAMES = [0, 0.25, 0.5, 0.75, 1, 0.75, 0.5, 0.25]
+
+function computeTopPlaceIds(places: MapPlace[]) {
+  return new Set(
+    [...places]
+      .filter((place) => place.voteCount > 0)
+      .sort((a, b) => b.voteCount - a.voteCount)
+      .slice(0, 1)
+      .map((place) => place.id)
+  )
+}
+
+type VoteMarkerIconOptions = {
+  highlighted?: boolean
+  glow?: number
+}
+
+function createVoteMarkerIcon(
+  googleApi: typeof google,
+  voteType: VoteType,
+  voteCount: number,
+  options: VoteMarkerIconOptions = {}
+): google.maps.Icon {
+  const { highlighted = false, glow = 0 } = options
   const marker = voteMarkerMeta(voteType)
   const count = Math.min(voteCount, 99)
-  const width = 40
-  const height = 49
-  const anchorX = Math.round(width / 2)
-  const anchorY = Math.round(height - 1)
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="54" height="66" viewBox="0 0 54 66"><path fill="${marker.color}" d="M27 2C13.2 2 2 13.2 2 27c0 18.8 25 37 25 37s25-18.2 25-37C52 13.2 40.8 2 27 2Z"/><circle cx="27" cy="27" r="19" fill="${marker.inner}"/><path fill="white" d="${marker.path}"/><circle cx="39" cy="15" r="10" fill="#111827"/><text x="39" y="19" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="800" fill="white">${count}</text></svg>`
+
+  // O marcador cresce conforme a quantidade de votos (1 voto -> 1x, 30+ votos -> 1.7x).
+  const clampedVotes = Math.min(Math.max(voteCount, 1), 30)
+  const scale = 1 + ((clampedVotes - 1) / 29) * 0.7
+  // Os 3 mais votados do dia ficam naturalmente maiores, alem do brilho.
+  const highlightBoost = highlighted ? 1.3 : 1
+  const pinPixelWidth = Math.round(38 * scale * highlightBoost)
+
+  const innerWidth = 54
+  const innerHeight = 66
+  const pad = highlighted ? 26 : 0
+  const viewWidth = innerWidth + pad * 2
+  const viewHeight = innerHeight + pad * 2
+  const width = Math.round((pinPixelWidth * viewWidth) / innerWidth)
+  const height = Math.round((width * viewHeight) / viewWidth)
+  const anchorX = Math.round((width * (27 + pad)) / viewWidth)
+  const anchorY = Math.round((height * (64 + pad)) / viewHeight)
+
+  const centerX = 27 + pad
+  const centerY = 27 + pad
+  const glowMarkup = highlighted
+    ? `<circle cx="${centerX}" cy="${centerY}" r="${(28 + glow * 14).toFixed(1)}" fill="#fde68a" opacity="${(0.12 + glow * 0.16).toFixed(3)}"/>` +
+      `<circle cx="${centerX}" cy="${centerY}" r="${(22 + glow * 9).toFixed(1)}" fill="#f59e0b" opacity="${(0.2 + glow * 0.22).toFixed(3)}"/>`
+    : ''
+  const ringMarkup = highlighted
+    ? '<circle cx="27" cy="27" r="22" fill="none" stroke="#fbbf24" stroke-width="3"/>'
+    : ''
+
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${viewWidth}" height="${viewHeight}" viewBox="0 0 ${viewWidth} ${viewHeight}">` +
+    glowMarkup +
+    `<g transform="translate(${pad} ${pad})">` +
+    `<path fill="${marker.color}" d="M27 2C13.2 2 2 13.2 2 27c0 18.8 25 37 25 37s25-18.2 25-37C52 13.2 40.8 2 27 2Z"/>` +
+    ringMarkup +
+    `<circle cx="27" cy="27" r="19" fill="${marker.inner}"/>` +
+    `<path fill="white" d="${marker.path}"/>` +
+    `<circle cx="39" cy="15" r="10" fill="#111827"/>` +
+    `<text x="39" y="19" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="800" fill="white">${count}</text>` +
+    `</g></svg>`
 
   return {
     anchor: new googleApi.maps.Point(anchorX, anchorY),
