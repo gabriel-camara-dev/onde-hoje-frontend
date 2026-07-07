@@ -1,4 +1,4 @@
-import { CalendarDays, LocateFixed, Search } from 'lucide-react'
+import { CalendarDays, LocateFixed, Search, Vote } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { MapPlace, VoteType } from '../../@types/OndeHoje'
@@ -8,6 +8,8 @@ import Button from '../ui/Button'
 export type GooglePlaceDraft = {
   googlePlaceId: string
   name: string
+  googlePlaceName?: string
+  nickname?: string
   formattedAddress: string
   latitude: number
   longitude: number
@@ -83,9 +85,11 @@ export function GooglePlacesMap({
     null
   )
   const autocompleteRequestIdRef = useRef(0)
+  const autocompleteDebounceRef = useRef<number | null>(null)
   const [error, setError] = useState('')
   const [isMapReady, setIsMapReady] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
+  const [searchDraft, setSearchDraft] = useState<GooglePlaceDraft | null>(null)
   const [suggestions, setSuggestions] = useState<google.maps.places.PlacePrediction[]>([])
 
   useEffect(() => {
@@ -150,6 +154,9 @@ export function GooglePlacesMap({
 
     return () => {
       cancelled = true
+      if (autocompleteDebounceRef.current) {
+        window.clearTimeout(autocompleteDebounceRef.current)
+      }
       markersRef.current.forEach((marker) => marker.setMap(null))
       draftMarkerRef.current?.setMap(null)
       mapRef.current = null
@@ -256,6 +263,8 @@ export function GooglePlacesMap({
     const trimmedQuery = query.trim()
     const map = mapRef.current
 
+    setSearchDraft(null)
+
     if (trimmedQuery.length < 2 || !map || !window.google?.maps?.places) {
       setSuggestions([])
       return
@@ -297,6 +306,16 @@ export function GooglePlacesMap({
         setSuggestions([])
       }
     }
+  }
+
+  function queueAutocompleteSuggestions(query: string) {
+    if (autocompleteDebounceRef.current) {
+      window.clearTimeout(autocompleteDebounceRef.current)
+    }
+
+    autocompleteDebounceRef.current = window.setTimeout(() => {
+      fetchAutocompleteSuggestions(query)
+    }, 220)
   }
 
   async function searchByText(query: string) {
@@ -374,6 +393,7 @@ export function GooglePlacesMap({
     map.panTo({ lat: draft.latitude, lng: draft.longitude })
     map.setZoom(16)
     setError('')
+    setSearchDraft(null)
     onDraftSelectedRef.current(draft)
     onLocationResolvedRef.current?.({
       address: draft.formattedAddress,
@@ -385,6 +405,7 @@ export function GooglePlacesMap({
     searchMarkerRef.current?.setMap(null)
     draftMarkerRef.current?.setMap(null)
     setError('')
+    setSearchDraft(null)
     onPlaceSelectedRef.current(place)
   }
   function selectFromMapClick(
@@ -459,6 +480,7 @@ export function GooglePlacesMap({
     map.panTo({ lat: draft.latitude, lng: draft.longitude })
     map.setZoom(16)
     setError('')
+    setSearchDraft(null)
     onDraftSelectedRef.current(draft)
     onLocationResolvedRef.current?.({
       address: draft.formattedAddress,
@@ -487,6 +509,7 @@ export function GooglePlacesMap({
     map.panTo({ lat: draft.latitude, lng: draft.longitude })
     map.setZoom(17)
     setError('')
+    setSearchDraft(draft)
     onLocationResolvedRef.current?.({
       address: draft.formattedAddress,
       city: draft.city,
@@ -538,6 +561,24 @@ export function GooglePlacesMap({
     searchByText(searchInputRef.current?.value ?? '')
   }
 
+  function voteSearchDraft() {
+    const map = mapRef.current
+
+    if (!searchDraft || !map || !window.google?.maps) {
+      return
+    }
+
+    searchMarkerRef.current?.setMap(null)
+    draftMarkerRef.current?.setMap(null)
+    draftMarkerRef.current = new window.google.maps.Marker({
+      map,
+      position: { lat: searchDraft.latitude, lng: searchDraft.longitude },
+      title: searchDraft.name,
+    })
+    setSearchDraft(null)
+    onDraftSelectedRef.current(searchDraft)
+  }
+
   return (
     <section
       className={`relative min-h-[calc(100vh-188px)] overflow-hidden rounded-lg border border-line bg-surface shadow-panel ${className}`}
@@ -545,10 +586,10 @@ export function GooglePlacesMap({
       <div ref={mapElementRef} className="absolute inset-0" />
       <div className="absolute left-3 right-3 top-3 z-10 grid gap-2 sm:left-4 sm:right-4 sm:top-4 md:left-6 md:right-auto md:w-[720px]">
         <form
-          className="grid grid-cols-2 gap-2 rounded-lg border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto]"
+          className="grid grid-cols-2 gap-2 rounded-lg border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto_auto]"
           onSubmit={submitSearch}
         >
-          <label className="col-span-2 grid min-h-11 grid-cols-[20px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 text-xs font-medium text-muted sm:col-span-3 lg:col-span-1">
+          <label className="col-span-2 grid min-h-11 grid-cols-[20px_1fr] items-center gap-2 rounded-xl bg-surface-muted px-3 text-xs font-medium text-muted sm:col-span-4 lg:col-span-1">
             <CalendarDays size={17} />
             <input
               aria-label="Dia do mapa"
@@ -567,7 +608,7 @@ export function GooglePlacesMap({
               ref={searchInputRef}
               className="min-h-11 min-w-0 bg-transparent text-sm font-semibold text-ink outline-none placeholder:text-muted/70"
               placeholder="Busque um lugar..."
-              onChange={(event) => fetchAutocompleteSuggestions(event.currentTarget.value)}
+              onChange={(event) => queueAutocompleteSuggestions(event.currentTarget.value)}
               onFocus={(event) => fetchAutocompleteSuggestions(event.currentTarget.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Escape') {
@@ -584,7 +625,21 @@ export function GooglePlacesMap({
           >
             {isSearching ? 'Buscando...' : 'Buscar'}
           </Button>
-          <Button className="min-h-11 px-4" type="button" variant="secondary" onClick={locateUser}>
+          <Button
+            className="min-h-11 px-4"
+            disabled={!searchDraft || isSearching}
+            type="button"
+            onClick={voteSearchDraft}
+          >
+            <Vote size={17} />
+            Votar
+          </Button>
+          <Button
+            className="col-span-2 min-h-11 px-4 sm:col-span-1"
+            type="button"
+            variant="secondary"
+            onClick={locateUser}
+          >
             <LocateFixed size={17} />
             <span className="sm:hidden">Localizar</span>
           </Button>
@@ -681,6 +736,7 @@ function mapGooglePlace(
   return {
     googlePlaceId: place.id,
     name: place.displayName!,
+    googlePlaceName: place.displayName!,
     formattedAddress: place.formattedAddress ?? place.displayName!,
     latitude: location.lat(),
     longitude: location.lng(),
@@ -789,4 +845,3 @@ function distanceInMeters(from: google.maps.LatLng, to: google.maps.LatLng) {
 function toRadians(value: number) {
   return (value * Math.PI) / 180
 }
-

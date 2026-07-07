@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   Clock3,
+  LoaderCircle,
   Navigation,
   TrendingUp,
   UserPlus,
@@ -61,7 +62,9 @@ export function PlaceVoteDialog({
 }: PlaceVoteDialogProps) {
   const isFreeMapPoint = draftPlace?.googlePlaceId.startsWith('map-click:') ?? false
   const dialogTitle = draftPlace ? (isFreeMapPoint ? 'Votar no lugar' : 'Votar no lugar') : 'Votar no lugar'
-  const placeTitle = draftPlace?.name ?? place?.name ?? 'Lugar selecionado'
+  const googlePlaceName = draftPlace?.googlePlaceName ?? place?.googlePlaceName
+  const nickname = draftPlace?.nickname ?? place?.nickname
+  const placeTitle = nickname ?? googlePlaceName ?? draftPlace?.name ?? place?.name ?? 'Lugar selecionado'
   const placeAddress = draftPlace?.formattedAddress ?? place?.formattedAddress
 
   return (
@@ -77,6 +80,9 @@ export function PlaceVoteDialog({
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase text-teal">{dialogTitle}</p>
               <h2 className="mt-1 truncate text-xl font-semibold">{placeTitle}</h2>
+              {googlePlaceName && googlePlaceName !== placeTitle && (
+                <p className="mt-1 truncate text-sm font-semibold text-ink">{googlePlaceName}</p>
+              )}
               {placeAddress && <p className="mt-1 line-clamp-2 text-sm text-muted">{placeAddress}</p>}
             </div>
             <button
@@ -107,6 +113,7 @@ export function PlaceVoteDialog({
             isPending={isPending}
             maxDay={maxDay}
             minDay={minDay}
+            googlePlaceName={googlePlaceName}
             placeName={draftPlace?.name ?? place?.name}
             selectedDay={selectedDay}
             subtitle={draftPlace?.formattedAddress ?? place?.formattedAddress}
@@ -224,6 +231,7 @@ function VotePanel({
   onDayChange,
   onCancelVote,
   onSubmit,
+  googlePlaceName,
   placeName,
   selectedDay,
   selectedGroupPublicId,
@@ -241,12 +249,25 @@ function VotePanel({
   onDayChange: (day: string) => void
   onCancelVote: (form: FormData) => void
   onSubmit: (form: FormData) => void
+  googlePlaceName?: string | null
   placeName?: string
   selectedDay: string
   selectedGroupPublicId?: string
   subtitle?: string
   voteCount?: number
 }) {
+  const submitLabel = isFreeMapPoint ? 'Salvar ponto e votar' : isNewPlace ? 'Salvar e votar' : 'Votar aqui'
+  const pendingLabel = isFreeMapPoint
+    ? 'Salvando ponto e votando...'
+    : isNewPlace
+      ? 'Salvando lugar e votando...'
+      : 'Registrando voto...'
+  const pendingMessage = isFreeMapPoint
+    ? 'Estamos salvando o ponto no mapa e confirmando seu voto. Isso pode levar alguns segundos.'
+    : isNewPlace
+      ? 'Estamos salvando o lugar e confirmando seu voto. Isso pode levar alguns segundos.'
+      : 'Estamos confirmando seu voto. Isso pode levar alguns segundos.'
+
   if (hasUserVote && !isNewPlace) {
     return (
       <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-3 text-ink shadow-panel backdrop-blur">
@@ -267,7 +288,8 @@ function VotePanel({
         >
           <input name="day" type="hidden" value={selectedDay} />
           <Button disabled={!placeName || isPending} type="submit" variant="danger">
-            Tirar meu voto
+            {isPending && <LoaderCircle className="animate-spin" size={17} />}
+            {isPending ? 'Removendo voto...' : 'Tirar meu voto'}
           </Button>
         </form>
       </section>
@@ -282,78 +304,94 @@ function VotePanel({
         </span>
       )}
       <form
+        aria-busy={isPending}
         className="grid gap-3"
         onSubmit={(event) => {
           event.preventDefault()
           onSubmit(new FormData(event.currentTarget))
         }}
       >
-        {isFreeMapPoint && (
+        {isPending && (
+          <div
+            aria-live="polite"
+            className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-200"
+          >
+            <LoaderCircle className="mt-0.5 shrink-0 animate-spin" size={18} />
+            <span>{pendingMessage}</span>
+          </div>
+        )}
+        <fieldset className="grid gap-3" disabled={isPending}>
+          {isNewPlace && (
+            <Input
+              autoFocus
+              defaultValue=""
+              label="Apelido do lugar"
+              maxLength={80}
+              minLength={2}
+              name="placeNickname"
+              placeholder={
+                googlePlaceName
+                  ? 'Ex: Role depois do trampo'
+                  : 'Ex: Quadra da praia, Escadaria, Mirante...'
+              }
+            />
+          )}
           <Input
-            autoFocus
-            defaultValue=""
-            label="Nome do lugar"
-            maxLength={80}
-            minLength={2}
-            name="placeName"
-            placeholder="Ex: Quadra da praia, Escadaria, Mirante..."
+            label="Dia"
+            max={maxDay}
+            min={minDay}
+            name="day"
             required
+            type="date"
+            value={selectedDay}
+            onChange={(event) => onDayChange(event.currentTarget.value)}
           />
-        )}
-        <Input
-          label="Dia"
-          max={maxDay}
-          min={minDay}
-          name="day"
-          required
-          type="date"
-          value={selectedDay}
-          onChange={(event) => onDayChange(event.currentTarget.value)}
-        />
-        <Select
-          defaultValue={selectedGroupPublicId ?? ''}
-          label="Grupo"
-          name="groupPublicId"
-          options={[
-            { label: 'Publico', value: '' },
-            ...groups.map((group) => ({ label: group.name, value: group.id })),
-          ]}
-        />
-        {canChooseVoteType && (
-          <fieldset>
-            <legend className="mb-3 block text-xs font-medium text-muted">Tipo do voto</legend>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-              {voteTypeOptions.map(({ icon: Icon, label, optionClassName, value }) => (
-                <label
-                  key={value}
-                  className={`grid min-h-14 cursor-pointer place-items-center gap-1 rounded-md border border-line bg-surface-muted px-2 py-2 text-xs font-semibold text-muted transition ${optionClassName}`}
-                >
-                  <input
-                    className="sr-only"
-                    defaultChecked={value === 'GENERAL'}
-                    name="voteType"
-                    type="radio"
-                    value={value}
-                  />
-                  <Icon size={18} />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        )}
-        <label className="grid gap-1.5 text-xs font-medium text-muted">
-          Nota opcional
-          <textarea
-            className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
-            maxLength={240}
-            name="note"
-            rows={2}
+          <Select
+            defaultValue={selectedGroupPublicId ?? ''}
+            label="Grupo"
+            name="groupPublicId"
+            options={[
+              { label: 'Publico', value: '' },
+              ...groups.map((group) => ({ label: group.name, value: group.id })),
+            ]}
           />
-        </label>
-        <Button disabled={!placeName || isPending} type="submit">
-          {isFreeMapPoint ? 'Salvar ponto e votar' : isNewPlace ? 'Salvar e votar' : 'Votar aqui'}
-        </Button>
+          {canChooseVoteType && (
+            <fieldset disabled={isPending}>
+              <legend className="mb-3 block text-xs font-medium text-muted">Tipo do voto</legend>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                {voteTypeOptions.map(({ icon: Icon, label, optionClassName, value }) => (
+                  <label
+                    key={value}
+                    className={`grid min-h-14 cursor-pointer place-items-center gap-1 rounded-md border border-line bg-surface-muted px-2 py-2 text-xs font-semibold text-muted transition ${optionClassName}`}
+                  >
+                    <input
+                      className="sr-only"
+                      defaultChecked={value === 'GENERAL'}
+                      name="voteType"
+                      type="radio"
+                      value={value}
+                    />
+                    <Icon size={18} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+          <label className="grid gap-1.5 text-xs font-medium text-muted">
+            Nota opcional
+            <textarea
+              className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
+              maxLength={240}
+              name="note"
+              rows={2}
+            />
+          </label>
+          <Button disabled={!placeName || isPending} type="submit">
+            {isPending && <LoaderCircle className="animate-spin" size={17} />}
+            {isPending ? pendingLabel : submitLabel}
+          </Button>
+        </fieldset>
       </form>
     </section>
   )
@@ -527,5 +565,3 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
     </span>
   )
 }
-
-

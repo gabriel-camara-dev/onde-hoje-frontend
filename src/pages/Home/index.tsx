@@ -251,22 +251,16 @@ export default function Home() {
       return
     }
 
-    const customPlaceName = String(form.get('placeName') || '').trim()
-    const shouldNameDraft = draftPlace.googlePlaceId.startsWith('map-click:')
-
-    if (shouldNameDraft && customPlaceName.length < 2) {
-      toast.error('De um nome para esse ponto do mapa.')
-      return
-    }
+    const nickname = String(form.get('placeNickname') || '').trim()
 
     createAndVoteMutation.mutate({
       day,
-      draft: shouldNameDraft
-        ? {
-            ...draftPlace,
-            name: customPlaceName,
-          }
-        : draftPlace,
+      draft: {
+        ...draftPlace,
+        name: nickname || draftPlace.googlePlaceName || draftPlace.name,
+        googlePlaceName: draftPlace.googlePlaceName || draftPlace.name,
+        nickname: nickname || undefined,
+      },
       groupPublicId: String(form.get('groupPublicId') || '') || undefined,
       note: String(form.get('note') || '') || undefined,
       voteType: voteTypeFrom(form),

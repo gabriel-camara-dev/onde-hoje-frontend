@@ -4,6 +4,8 @@ export type Place = {
   id: string
   googlePlaceId: string
   name: string
+  googlePlaceName?: string | null
+  nickname?: string | null
   formattedAddress: string
   latitude: number
   longitude: number
