@@ -57,13 +57,13 @@ export function PlaceVoteDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[90] bg-black/55 px-3 py-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[90] bg-black/55 px-3 py-4 backdrop-blur-sm max-h-[100dvh] overflow-y-auto"
       onClick={onClose}
     >
       <div className="flex min-h-full items-center justify-center">
         <section
           aria-modal="true"
-          className="grid max-h-[calc(100dvh-2rem)] w-full max-w-xl gap-3 overflow-y-auto rounded-lg border border-line bg-surface p-4 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)]"
+          className="grid max-h-[calc(100dvh-2rem)] lg:max-h-[calc(100dvh-12rem)] w-full max-w-xl gap-3 overflow-y-auto rounded-lg border border-line bg-surface p-4 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)]"
           role="dialog"
           onClick={(event) => event.stopPropagation()}
         >
