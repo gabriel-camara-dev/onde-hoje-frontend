@@ -52,11 +52,13 @@ export type Group = {
   todayVotesCount: number
 }
 
+export type GroupMemberStatus = 'ACTIVE' | 'PENDING' | 'INVITED' | 'BLOCKED'
+
 export type MyGroup = Group & {
   myRole: 'OWNER' | 'MODERATOR' | 'MEMBER'
-  myStatus: 'ACTIVE' | 'PENDING' | 'BLOCKED'
+  myStatus: GroupMemberStatus
   members: Array<{
-    status: 'ACTIVE' | 'PENDING' | 'BLOCKED'
+    status: GroupMemberStatus
     role: 'OWNER' | 'MODERATOR' | 'MEMBER'
     user: {
       publicId: string
@@ -65,6 +67,38 @@ export type MyGroup = Group & {
       avatarUrl?: string | null
     }
   }>
+}
+
+export type NotificationType =
+  | 'GROUP_INVITE'
+  | 'GROUP_INVITE_ACCEPTED'
+  | 'GROUP_JOIN_REQUEST'
+  | 'GROUP_MEMBER_ACCEPTED'
+  | 'FRIEND_REQUEST'
+  | 'FRIEND_ACCEPTED'
+
+export type AppNotification = {
+  id: string
+  type: NotificationType
+  title: string
+  body?: string | null
+  data?: {
+    groupPublicId?: string
+    groupName?: string
+  } | null
+  read: boolean
+  createdAt: string
+  actor?: {
+    publicId: string
+    name: string
+    username: string
+    avatarUrl?: string | null
+  } | null
+}
+
+export type NotificationsResponse = {
+  unreadCount: number
+  notifications: AppNotification[]
 }
 
 export type VoteHistoryItem = {

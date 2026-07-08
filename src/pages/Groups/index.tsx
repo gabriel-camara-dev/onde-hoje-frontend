@@ -15,6 +15,7 @@ import {
   listPublicGroups,
   removeGroupMember,
   requestFriendship,
+  respondGroupInvite,
 } from '../../api/ondeHoje'
 import Button from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -149,7 +150,25 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
       inviteGroupMember(groupId, username.replace(/^@/, '')),
     onSuccess: () => {
       refreshGroups()
-      toast.success('Membro convidado.')
+      toast.success('Convite enviado. A pessoa precisa aceitar para entrar.')
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
+  const respondInviteMutation = useMutation({
+    mutationFn: ({ groupId, action }: { groupId: string; action: 'accept' | 'decline' }) =>
+      respondGroupInvite(groupId, action),
+    onSuccess: (_data, variables) => {
+      refreshGroups()
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+
+      if (variables.action === 'decline') {
+        setSelectedGroupId(undefined)
+        toast.success('Convite recusado.')
+      } else {
+        toast.success('Voce entrou no grupo.')
+      }
     },
     onError: (error) => {
       toast.error(error.message)
@@ -420,6 +439,16 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
             onLeave={
               selectedMyGroup?.myStatus === 'ACTIVE'
                 ? () => leaveMutation.mutate(selectedGroup.id)
+                : undefined
+            }
+            onAcceptInvite={
+              selectedMyGroup?.myStatus === 'INVITED'
+                ? () => respondInviteMutation.mutate({ groupId: selectedGroup.id, action: 'accept' })
+                : undefined
+            }
+            onDeclineInvite={
+              selectedMyGroup?.myStatus === 'INVITED'
+                ? () => respondInviteMutation.mutate({ groupId: selectedGroup.id, action: 'decline' })
                 : undefined
             }
             onLoginToJoin={

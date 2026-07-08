@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useUserStore } from '../../stores/userStore'
 import { AppMenu } from '../AppMenu'
 import { Avatar } from '../Avatar'
+import { NotificationBell } from '../NotificationBell'
 import { ThemeToggle } from '../ThemeToggle'
 import Button from '../ui/Button'
 
@@ -25,6 +26,7 @@ export default function Header() {
         </Link>
 
         <div className="flex items-center gap-2">
+          {user && <NotificationBell />}
           <ThemeToggle />
           {user ? (
             <button

@@ -4,12 +4,14 @@ import type {
   AdminDashboard,
   AdminOverview,
   AdminUserHistory,
+  AppNotification,
   FriendListItem,
   Group,
   MyGroup,
   ListUsersResponse,
   MapHistoryDay,
   MapPlace,
+  NotificationsResponse,
   VoteType,
   Place,
   VoteHistoryItem,
@@ -31,7 +33,7 @@ export type GlobalRankingFilters = {
 }
 
 export type GroupMemberSummary = {
-  status: 'ACTIVE' | 'PENDING' | 'BLOCKED'
+  status: 'ACTIVE' | 'PENDING' | 'INVITED' | 'BLOCKED'
   role: 'OWNER' | 'MODERATOR' | 'MEMBER'
   user: {
     publicId: string
@@ -220,6 +222,12 @@ export async function inviteGroupMember(groupPublicId: string, username: string)
   return response.data
 }
 
+export async function respondGroupInvite(groupPublicId: string, action: 'accept' | 'decline') {
+  const response = await axiosPrivate.post(`/groups/${groupPublicId}/invitation/${action}`)
+
+  return response.data
+}
+
 export async function removeGroupMember(groupPublicId: string, username: string) {
   await axiosPrivate.delete(`/groups/${groupPublicId}/members/${username}`)
 }
@@ -342,3 +350,25 @@ export async function getUserVoteHistory(publicId: string) {
 
   return response.data
 }
+
+export async function listNotifications() {
+  const response = await axiosPrivate.get<NotificationsResponse>('/notifications')
+
+  return response.data
+}
+
+export async function markNotificationRead(notificationId: string) {
+  const response = await axiosPrivate.post<{ unreadCount: number }>(
+    `/notifications/${notificationId}/read`
+  )
+
+  return response.data
+}
+
+export async function markAllNotificationsRead() {
+  const response = await axiosPrivate.post<{ unreadCount: number }>('/notifications/read-all')
+
+  return response.data
+}
+
+export type { AppNotification }
