@@ -48,7 +48,7 @@ export function VotePanel({
   const canDecline = !isNewPlace && (voteCount ?? 0) > 0
   const effectiveGoing = canDecline ? going : true
   const submitLabel = !effectiveGoing
-    ? 'Marcar que nao vou'
+    ? 'Marcar que não vou'
     : isFreeMapPoint
       ? 'Salvar ponto e votar'
       : isNewPlace
@@ -229,8 +229,8 @@ export function VotePanel({
               </div>
               {!going && (
                 <p className="text-xs font-medium text-muted">
-                  Seu &quot;nao vou&quot; nao conta no limite semanal nem coloca o lugar no mapa — so
-                  avisa o grupo que voce nao vai.
+                  Seu &quot;não vou&quot; não conta no limite semanal nem coloca o lugar no mapa, só
+                  avisa o grupo que voce não vai.
                 </p>
               )}
             </>

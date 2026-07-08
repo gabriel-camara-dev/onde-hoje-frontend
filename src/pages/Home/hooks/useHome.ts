@@ -111,8 +111,17 @@ export function useHome() {
     () => (myGroupsQuery.data ?? []).filter((group) => group.myStatus === 'ACTIVE'),
     [myGroupsQuery.data]
   )
+  // Day-accurate card for the open dialog: the map markers are aggregated over
+  // the whole week in week view, so fetch this exact place for the selected day
+  // to get the real vote count/voters (drives the "nao vou" availability too).
+  const selectedPlaceDetailQuery = useQuery({
+    enabled: Boolean(selectedPlace && !draftPlace),
+    queryKey: ['map-place', selectedPlace?.id, filters.day, filters.groupPublicId],
+    queryFn: () => getMapPlace(selectedPlace!.id, { day: filters.day, groupPublicId: filters.groupPublicId }),
+  })
   const selectedPlaceForDay = selectedPlace
-    ? (places.find((place) => place.id === selectedPlace.id) ?? {
+    ? (selectedPlaceDetailQuery.data ??
+      places.find((place) => place.id === selectedPlace.id) ?? {
         ...selectedPlace,
         voteCount: 0,
         voters: [],
@@ -238,6 +247,7 @@ export function useHome() {
       queryClient.invalidateQueries({ queryKey: ['places'] }),
       queryClient.refetchQueries({ queryKey: ['today-map'], type: 'active' }),
       queryClient.refetchQueries({ queryKey: ['top-places'], type: 'active' }),
+      queryClient.refetchQueries({ queryKey: ['map-place'], type: 'active' }),
     ])
   }
 
