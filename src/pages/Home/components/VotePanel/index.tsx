@@ -44,7 +44,10 @@ export function VotePanel({
   voteCount,
 }: VotePanelProps) {
   const [going, setGoing] = useState(true)
-  const submitLabel = !going
+  // "Nao vou" only makes sense when the place already has votes (someone proposed it).
+  const canDecline = !isNewPlace && (voteCount ?? 0) > 0
+  const effectiveGoing = canDecline ? going : true
+  const submitLabel = !effectiveGoing
     ? 'Marcar que nao vou'
     : isFreeMapPoint
       ? 'Salvar ponto e votar'
@@ -199,36 +202,44 @@ export function VotePanel({
               </span>
             </span>
           </label>
-          <input name="going" type="hidden" value={going ? 'true' : 'false'} />
-          <div className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-surface-muted p-1">
-            <button
-              className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
-                going ? 'bg-teal text-on-teal' : 'text-muted hover:text-ink'
-              }`}
-              type="button"
-              onClick={() => setGoing(true)}
-            >
-              <Check size={16} />
-              Vou
-            </button>
-            <button
-              className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
-                going ? 'text-muted hover:text-ink' : 'bg-red-700 text-white'
-              }`}
-              type="button"
-              onClick={() => setGoing(false)}
-            >
-              <Ban size={16} />
-              Nao vou
-            </button>
-          </div>
-          {!going && (
-            <p className="text-xs font-medium text-muted">
-              Seu &quot;nao vou&quot; nao conta no limite semanal nem coloca o lugar no mapa — so
-              avisa o grupo que voce nao vai.
-            </p>
+          <input name="going" type="hidden" value={effectiveGoing ? 'true' : 'false'} />
+          {canDecline && (
+            <>
+              <div className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-surface-muted p-1">
+                <button
+                  className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
+                    going ? 'bg-teal text-on-teal' : 'text-muted hover:text-ink'
+                  }`}
+                  type="button"
+                  onClick={() => setGoing(true)}
+                >
+                  <Check size={16} />
+                  Vou
+                </button>
+                <button
+                  className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
+                    going ? 'text-muted hover:text-ink' : 'bg-red-700 text-white'
+                  }`}
+                  type="button"
+                  onClick={() => setGoing(false)}
+                >
+                  <Ban size={16} />
+                  Nao vou
+                </button>
+              </div>
+              {!going && (
+                <p className="text-xs font-medium text-muted">
+                  Seu &quot;nao vou&quot; nao conta no limite semanal nem coloca o lugar no mapa — so
+                  avisa o grupo que voce nao vai.
+                </p>
+              )}
+            </>
           )}
-          <Button disabled={!placeName || isPending} type="submit" variant={going ? 'primary' : 'danger'}>
+          <Button
+            disabled={!placeName || isPending}
+            type="submit"
+            variant={effectiveGoing ? 'primary' : 'danger'}
+          >
             {isPending && <LoaderCircle className="animate-spin" size={17} />}
             {isPending ? pendingLabel : submitLabel}
           </Button>

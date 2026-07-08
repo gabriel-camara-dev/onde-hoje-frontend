@@ -55,6 +55,8 @@ const errorMessages: Record<string, string> = {
   'User with same username already exists': 'Esse username ja esta em uso.',
   'Validation failed': 'Confira os campos informados.',
   'You can vote for at most 6 places per week': 'Voce atingiu o limite de 6 votos na semana.',
+  'You can only mark "not going" on a place that already has votes':
+    'So da para marcar "nao vou" em um lugar que ja tem votos.',
   'latitude and longitude are required when radiusKm is provided':
     'Latitude e longitude sao obrigatorias quando o raio e informado.',
 }
