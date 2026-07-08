@@ -1,4 +1,4 @@
-import { CalendarDays, LocateFixed, Search, Vote } from 'lucide-react'
+import { CalendarDays, LocateFixed, Maximize, Search, Vote, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { MapPlace, VoteType } from '../../@types/OndeHoje'
@@ -88,6 +88,7 @@ export function GooglePlacesMap({
   const autocompleteRequestIdRef = useRef(0)
   const autocompleteDebounceRef = useRef<number | null>(null)
   const [error, setError] = useState('')
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [isMapReady, setIsMapReady] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [searchDraft, setSearchDraft] = useState<GooglePlaceDraft | null>(null)
@@ -126,6 +127,9 @@ export function GooglePlacesMap({
           center: fallbackCenter,
           clickableIcons: true,
           disableDefaultUI: true,
+          // On touch devices one finger scrolls the page (cooperative); the
+          // fullscreen mode below switches to 'greedy' for free navigation.
+          gestureHandling: 'auto',
           mapTypeControl: false,
           streetViewControl: false,
           zoom: 12,
@@ -620,11 +624,52 @@ export function GooglePlacesMap({
     onDraftSelectedRef.current(searchDraft)
   }
 
+  function toggleFullscreen() {
+    setIsFullscreen((current) => {
+      const next = !current
+      const map = mapRef.current
+
+      if (map) {
+        map.setOptions({ gestureHandling: next ? 'greedy' : 'auto' })
+        // Recalculate the map size after the container resizes.
+        window.setTimeout(() => window.google?.maps?.event.trigger(map, 'resize'), 80)
+      }
+
+      return next
+    })
+  }
+
   return (
     <section
-      className={`relative min-h-[calc(100vh-188px)] overflow-hidden rounded-lg border border-line bg-surface shadow-panel ${className}`}
+      className={
+        isFullscreen
+          ? 'fixed inset-0 z-[70] overflow-hidden bg-surface'
+          : `relative min-h-[calc(100vh-188px)] overflow-hidden rounded-lg border border-line bg-surface shadow-panel ${className}`
+      }
     >
       <div ref={mapElementRef} className="absolute inset-0" />
+
+      {!isFullscreen && (
+        <button
+          className="absolute bottom-4 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-teal px-5 py-2.5 text-sm font-semibold text-on-teal shadow-panel md:hidden"
+          type="button"
+          onClick={toggleFullscreen}
+        >
+          <Maximize size={17} />
+          Explorar mapa
+        </button>
+      )}
+
+      {isFullscreen && (
+        <button
+          className="absolute bottom-5 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-line bg-surface/95 px-5 py-2.5 text-sm font-semibold text-ink shadow-panel backdrop-blur"
+          type="button"
+          onClick={toggleFullscreen}
+        >
+          <X size={18} />
+          Fechar mapa
+        </button>
+      )}
       <div className="absolute left-3 right-3 top-3 z-10 grid gap-2 sm:left-4 sm:right-4 sm:top-4 md:left-6 md:right-auto md:w-[720px]">
         <form
           className="grid grid-cols-6 gap-2 rounded-lg border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto_auto]"

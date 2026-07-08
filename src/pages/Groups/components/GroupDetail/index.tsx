@@ -1,6 +1,7 @@
 import { Check, Copy, Link2, LogOut, Send, UserPlus, X } from 'lucide-react'
 import type { FriendListItem, MyGroup } from '../../../../@types/OndeHoje'
 import type { PublicGroupDetails } from '../../../../api/ondeHoje'
+import { Avatar } from '../../../../components/Avatar'
 import Button from '../../../../components/ui/Button'
 import { EmptyState } from '../../../../components/ui/EmptyState'
 import Input from '../../../../components/ui/Input'
@@ -51,6 +52,7 @@ export function GroupDetail({
   const isInvited = 'myStatus' in group && group.myStatus === 'INVITED'
   const {
     activeMembers,
+    callFriend,
     confirmAction,
     confirmActionSubmit,
     confirmRemoveMember,
@@ -58,14 +60,13 @@ export function GroupDetail({
     copyInviteLink,
     inviteFriends,
     inviteFriendSearch,
+    isFriendPickerOpen,
     isInviteModalOpen,
     pendingMembers,
-    selectedInviteUsernames,
-    sendSelectedInvites,
     setConfirmAction,
     setInviteFriendSearch,
+    setIsFriendPickerOpen,
     setIsInviteModalOpen,
-    toggleInviteUsername,
   } = useGroupDetailState({ friends, group, inviteUrl, onInvite, onLeave, onRemove })
 
   return (
@@ -219,61 +220,68 @@ export function GroupDetail({
               </p>
             </section>
 
-            {canManage && onInvite && (
-              <section className="grid gap-3 rounded-lg border border-line p-3">
-                <div>
-                  <p className="text-sm font-semibold">Convidar amigos</p>
-                  <p className="text-xs text-muted">Pesquise e selecione pessoas da sua lista de amigos.</p>
-                </div>
-                <Input
-                  label="Buscar amigo"
-                  name="friendSearch"
-                  placeholder="Nome ou username"
-                  type="search"
-                  value={inviteFriendSearch}
-                  onChange={(event) => setInviteFriendSearch(event.currentTarget.value)}
-                />
-                <div className="grid max-h-64 gap-2 overflow-y-auto pr-1">
-                  {inviteFriends.length === 0 ? (
-                    <EmptyState
-                      title="Nenhum amigo disponivel"
-                      description="Amigos que nao estao no grupo aparecem aqui."
-                    />
-                  ) : (
-                    inviteFriends.map((friendship) => {
-                      const username = friendship.friend.username!
-                      const selected = selectedInviteUsernames.has(username)
+            {isMember && onInvite && (
+              <Button
+                type="button"
+                onClick={() => {
+                  setInviteFriendSearch('')
+                  setIsFriendPickerOpen(true)
+                }}
+              >
+                <UserPlus size={16} />
+                Chamar um amigo
+              </Button>
+            )}
+          </div>
+        </Modal>
+      )}
 
-                      return (
-                        <button
-                          key={friendship.friend.publicId}
-                          className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-left transition ${
-                            selected ? 'border-teal bg-teal-soft' : 'border-line hover:bg-teal-soft'
-                          }`}
-                          type="button"
-                          onClick={() => toggleInviteUsername(username)}
-                        >
-                          <span className="min-w-0">
-                            <strong className="block truncate text-sm">{friendship.friend.name}</strong>
-                            <small className="text-teal">@{username}</small>
-                          </span>
-                          <span className="grid size-7 place-items-center rounded-md border border-line">
-                            {selected && <Check size={16} />}
-                          </span>
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
-                <Button
-                  disabled={selectedInviteUsernames.size === 0}
-                  type="button"
-                  onClick={sendSelectedInvites}
-                >
-                  <Send size={16} />
-                  Enviar convites
-                </Button>
-              </section>
+      {isFriendPickerOpen && (
+        <Modal title="Chamar um amigo" onClose={() => setIsFriendPickerOpen(false)}>
+          <Input
+            label="Buscar amigo"
+            name="friendSearch"
+            placeholder="Nome ou username"
+            type="search"
+            value={inviteFriendSearch}
+            onChange={(event) => setInviteFriendSearch(event.currentTarget.value)}
+          />
+          <div className="grid max-h-[45vh] gap-1.5 overflow-y-auto pr-1">
+            {inviteFriends.length === 0 ? (
+              <EmptyState
+                title="Nenhum amigo disponivel"
+                description="Amigos que ainda nao estao no grupo aparecem aqui."
+              />
+            ) : (
+              inviteFriends.map((friendship) => {
+                const username = friendship.friend.username!
+
+                return (
+                  <article
+                    key={friendship.friend.publicId}
+                    className="flex items-center gap-2.5 rounded-lg border border-line p-2"
+                  >
+                    <Avatar
+                      name={friendship.friend.name}
+                      src={friendship.friend.avatarUrl}
+                      className="size-9 rounded-md"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <strong className="block truncate text-sm">{friendship.friend.name}</strong>
+                      <span className="block truncate text-xs font-medium text-teal">@{username}</span>
+                    </div>
+                    <Button
+                      className="h-9 shrink-0 px-3 py-0 text-xs"
+                      type="button"
+                      variant="secondary"
+                      onClick={() => callFriend(username)}
+                    >
+                      <Send size={15} />
+                      Chamar
+                    </Button>
+                  </article>
+                )
+              })
             )}
           </div>
         </Modal>

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import {
   cancelVoteForPlace,
   createPlace,
+  getMapPlace,
   getTodayMap,
   getTopPlaces,
   listMyGroups,
@@ -66,47 +67,45 @@ export function useHome() {
   const places = useMemo(() => mapQuery.data ?? [], [mapQuery.data])
   const voteLinkPlaceId = searchParams.get('vote')
 
-  // Vote link (?vote=<placeId>&city=&day=): focus the shared place so it loads,
-  // then open its vote dialog once the map returns it.
-  useEffect(() => {
-    if (!voteLinkPlaceId) {
-      return
-    }
-
-    const linkCity = searchParams.get('city')
-    const linkDay = searchParams.get('day')
-
-    setFilters((currentFilters) => ({
-      ...currentFilters,
-      ...(linkCity && linkCity !== currentFilters.city ? { city: linkCity } : {}),
-      ...(linkDay && isAllowedVoteDay(linkDay, today, maxVoteDay)
-        ? { day: linkDay, from: undefined, to: undefined }
-        : {}),
-    }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voteLinkPlaceId])
-
+  // Vote link (?vote=<placeId>&city=&day=): fetch the exact place directly so it
+  // opens regardless of the current map view (city/day), then clean the URL.
   useEffect(() => {
     if (!voteLinkPlaceId || handledVoteLinkRef.current) {
       return
     }
 
-    const place = places.find((item) => item.id === voteLinkPlaceId)
-
-    if (!place) {
-      return
-    }
-
     handledVoteLinkRef.current = true
-    setSelectedPlace(place)
 
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.delete('vote')
-    nextParams.delete('city')
-    nextParams.delete('day')
-    setSearchParams(nextParams, { replace: true })
+    const linkCity = searchParams.get('city')
+    const linkDay = searchParams.get('day')
+    const day = linkDay && isAllowedVoteDay(linkDay, today, maxVoteDay) ? linkDay : filters.day
+
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      ...(linkCity ? { city: linkCity } : {}),
+      day,
+      from: undefined,
+      to: undefined,
+    }))
+
+    getMapPlace(voteLinkPlaceId, { day })
+      .then((place) => {
+        if (place) {
+          setSelectedPlace(place)
+        }
+      })
+      .catch(() => {
+        toast.error('Nao foi possivel abrir esse lugar.')
+      })
+      .finally(() => {
+        const nextParams = new URLSearchParams(searchParams)
+        nextParams.delete('vote')
+        nextParams.delete('city')
+        nextParams.delete('day')
+        setSearchParams(nextParams, { replace: true })
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [places, voteLinkPlaceId])
+  }, [voteLinkPlaceId])
   const topPlaces = useMemo(() => topPlacesQuery.data ?? [], [topPlacesQuery.data])
   const activeGroups = useMemo(
     () => (myGroupsQuery.data ?? []).filter((group) => group.myStatus === 'ACTIVE'),

@@ -25,9 +25,9 @@ export function useGroupDetailState({
   onRemove?: (username: string) => void
 }) {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [isFriendPickerOpen, setIsFriendPickerOpen] = useState(false)
   const [confirmAction, setConfirmAction] = useState<ConfirmGroupAction>(null)
   const [inviteFriendSearch, setInviteFriendSearch] = useState('')
-  const [selectedInviteUsernames, setSelectedInviteUsernames] = useState<Set<string>>(new Set())
   const activeMembers = useMemo(
     () => group.members.filter((member) => member.status === 'ACTIVE'),
     [group.members]
@@ -36,14 +36,14 @@ export function useGroupDetailState({
     () => group.members.filter((member) => member.status === 'PENDING'),
     [group.members]
   )
-  const activeMemberUsernames = useMemo(
-    () => new Set(activeMembers.map((member) => member.user.username)),
-    [activeMembers]
+  const memberUsernames = useMemo(
+    () => new Set(group.members.map((member) => member.user.username)),
+    [group.members]
   )
   const inviteFriends = friends.filter((friendship) => {
     const username = friendship.friend.username
 
-    if (friendship.status !== 'ACCEPTED' || !username || activeMemberUsernames.has(username)) {
+    if (friendship.status !== 'ACCEPTED' || !username || memberUsernames.has(username)) {
       return false
     }
 
@@ -98,35 +98,13 @@ export function useGroupDetailState({
     }
   }
 
-  function toggleInviteUsername(username: string) {
-    setSelectedInviteUsernames((current) => {
-      const next = new Set(current)
-
-      if (next.has(username)) {
-        next.delete(username)
-      } else {
-        next.add(username)
-      }
-
-      return next
-    })
-  }
-
-  function sendSelectedInvites() {
-    if (!onInvite || selectedInviteUsernames.size === 0) {
-      return
-    }
-
-    for (const username of selectedInviteUsernames) {
-      onInvite(username)
-    }
-
-    setSelectedInviteUsernames(new Set())
-    setIsInviteModalOpen(false)
+  function callFriend(username: string) {
+    onInvite?.(username)
   }
 
   return {
     activeMembers,
+    callFriend,
     confirmAction,
     confirmActionSubmit,
     confirmRemoveMember,
@@ -134,13 +112,12 @@ export function useGroupDetailState({
     copyInviteLink,
     inviteFriends,
     inviteFriendSearch,
+    isFriendPickerOpen,
     isInviteModalOpen,
     pendingMembers,
-    selectedInviteUsernames,
-    sendSelectedInvites,
     setConfirmAction,
     setInviteFriendSearch,
+    setIsFriendPickerOpen,
     setIsInviteModalOpen,
-    toggleInviteUsername,
   }
 }

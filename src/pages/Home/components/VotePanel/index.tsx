@@ -96,7 +96,7 @@ export function VotePanel({
       )}
       <form
         aria-busy={isPending}
-        className="grid gap-3"
+        className="grid gap-2.5"
         onSubmit={(event) => {
           event.preventDefault()
           onSubmit(new FormData(event.currentTarget))
@@ -111,7 +111,7 @@ export function VotePanel({
             <span>{pendingMessage}</span>
           </div>
         )}
-        <fieldset className="grid gap-3" disabled={isPending}>
+        <fieldset className="grid gap-2.5" disabled={isPending}>
           {isNewPlace && (
             <Input
               autoFocus
@@ -153,7 +153,7 @@ export function VotePanel({
                 {voteTypeOptions.map(({ icon: Icon, label, optionClassName, value }) => (
                   <label
                     key={value}
-                    className={`grid min-h-14 cursor-pointer place-items-center gap-1 rounded-md border border-line bg-surface-muted px-2 py-2 text-xs font-semibold text-muted transition ${optionClassName}`}
+                    className={`grid min-h-12 cursor-pointer place-items-center gap-0.5 rounded-md border border-line bg-surface-muted px-1.5 py-1.5 text-xs font-semibold text-muted transition ${optionClassName}`}
                   >
                     <input
                       className="sr-only"

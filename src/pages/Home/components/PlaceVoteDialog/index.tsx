@@ -63,7 +63,7 @@ export function PlaceVoteDialog({
       <div className="flex min-h-full items-center justify-center">
         <section
           aria-modal="true"
-          className="grid max-h-[calc(100dvh-2rem)] lg:max-h-[calc(100dvh-12rem)] w-full max-w-xl gap-3 overflow-y-auto rounded-lg border border-line bg-surface p-4 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)]"
+          className="grid max-h-[calc(100dvh-2rem)] w-full max-w-md gap-2.5 overflow-y-auto rounded-lg border border-line bg-surface p-3.5 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)] lg:max-h-[calc(100dvh-8rem)]"
           role="dialog"
           onClick={(event) => event.stopPropagation()}
         >

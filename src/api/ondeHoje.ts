@@ -83,6 +83,17 @@ export async function getTopPlaces(filters: MapFilters & { limit?: number }) {
   return response.data
 }
 
+export async function getMapPlace(
+  placePublicId: string,
+  params: { day?: string; groupPublicId?: string } = {}
+) {
+  const response = await axiosPrivate.get<MapPlace>(`/map/places/${placePublicId}`, {
+    params: compactParams({ day: params.day, groupPublicId: params.groupPublicId }),
+  })
+
+  return response.data
+}
+
 export async function getGlobalRanking(filters: GlobalRankingFilters) {
   const response = await axiosPublic.get<MapPlace[]>('/map/global-ranking', {
     params: compactParams({ ...filters, limit: 50 }),

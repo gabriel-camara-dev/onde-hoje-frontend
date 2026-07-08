@@ -294,23 +294,35 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     ? `${window.location.origin}/groups/${selectedGroup.id}?join=1`
     : ''
 
+  // Group invite link (/groups/:id?join=1): act on the id from the URL directly
+  // so it works for private groups too (which never load via getPublicGroup) and
+  // regardless of whether the group panel finished loading.
   useEffect(() => {
-    if (
-      !user ||
-      !selectedGroup ||
-      !searchParams.has('join') ||
-      handledJoinInviteRef.current ||
-      'myRole' in selectedGroup
-    ) {
+    if (!searchParams.has('join') || !groupPublicId || handledJoinInviteRef.current) {
       return
     }
 
     handledJoinInviteRef.current = true
-    joinMutation.mutate({ groupPublicId: selectedGroup.id })
+
+    if (!user) {
+      navigate(`/login?returnTo=${encodeURIComponent(`/groups/${groupPublicId}?join=1`)}`, {
+        replace: true,
+      })
+      return
+    }
+
+    const alreadyActive = myGroups.some(
+      (item) => item.id === groupPublicId && item.myStatus === 'ACTIVE'
+    )
+
+    if (!alreadyActive) {
+      joinMutation.mutate({ groupPublicId })
+    }
+
     const nextSearchParams = new URLSearchParams(searchParams)
     nextSearchParams.delete('join')
     setSearchParams(nextSearchParams, { replace: true })
-  }, [joinMutation, searchParams, selectedGroup, setSearchParams, user])
+  }, [groupPublicId, joinMutation, myGroups, navigate, searchParams, setSearchParams, user])
 
   function loginForGroupInvite() {
     const nextSearchParams = new URLSearchParams(location.search)
