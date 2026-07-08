@@ -1,4 +1,5 @@
-import { LoaderCircle } from 'lucide-react'
+import { Ban, Check, LoaderCircle } from 'lucide-react'
+import { useState } from 'react'
 import Button from '../../../../components/ui/Button'
 import Input from '../../../../components/ui/Input'
 import Select from '../../../../components/ui/Select'
@@ -42,11 +43,14 @@ export function VotePanel({
   selectedGroupPublicId,
   voteCount,
 }: VotePanelProps) {
-  const submitLabel = isFreeMapPoint
-    ? 'Salvar ponto e votar'
-    : isNewPlace
-      ? 'Salvar e votar'
-      : 'Votar aqui'
+  const [going, setGoing] = useState(true)
+  const submitLabel = !going
+    ? 'Marcar que nao vou'
+    : isFreeMapPoint
+      ? 'Salvar ponto e votar'
+      : isNewPlace
+        ? 'Salvar e votar'
+        : 'Votar aqui'
   const pendingLabel = isFreeMapPoint
     ? 'Salvando ponto e votando...'
     : isNewPlace
@@ -127,16 +131,19 @@ export function VotePanel({
               }
             />
           )}
-          <Input
-            label="Dia"
-            max={maxDay}
-            min={minDay}
-            name="day"
-            required
-            type="date"
-            value={selectedDay}
-            onChange={(event) => onDayChange(event.currentTarget.value)}
-          />
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <Input
+              label="Dia"
+              max={maxDay}
+              min={minDay}
+              name="day"
+              required
+              type="date"
+              value={selectedDay}
+              onChange={(event) => onDayChange(event.currentTarget.value)}
+            />
+            <Input label="Horario (opcional)" name="voteTime" type="time" />
+          </div>
           <Select
             defaultValue={selectedGroupPublicId ?? ''}
             label="Grupo"
@@ -192,7 +199,36 @@ export function VotePanel({
               </span>
             </span>
           </label>
-          <Button disabled={!placeName || isPending} type="submit">
+          <input name="going" type="hidden" value={going ? 'true' : 'false'} />
+          <div className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-surface-muted p-1">
+            <button
+              className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
+                going ? 'bg-teal text-on-teal' : 'text-muted hover:text-ink'
+              }`}
+              type="button"
+              onClick={() => setGoing(true)}
+            >
+              <Check size={16} />
+              Vou
+            </button>
+            <button
+              className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
+                going ? 'text-muted hover:text-ink' : 'bg-red-700 text-white'
+              }`}
+              type="button"
+              onClick={() => setGoing(false)}
+            >
+              <Ban size={16} />
+              Nao vou
+            </button>
+          </div>
+          {!going && (
+            <p className="text-xs font-medium text-muted">
+              Seu &quot;nao vou&quot; nao conta no limite semanal nem coloca o lugar no mapa — so
+              avisa o grupo que voce nao vai.
+            </p>
+          )}
+          <Button disabled={!placeName || isPending} type="submit" variant={going ? 'primary' : 'danger'}>
             {isPending && <LoaderCircle className="animate-spin" size={17} />}
             {isPending ? pendingLabel : submitLabel}
           </Button>

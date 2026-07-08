@@ -164,6 +164,8 @@ export async function voteForPlace(
     note?: string
     voteType?: VoteType
     showIdentity?: boolean
+    going?: boolean
+    voteTime?: string
   }
 ) {
   const response = await axiosPrivate.post(`/places/${placePublicId}/votes`, body)

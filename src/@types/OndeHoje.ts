@@ -28,6 +28,8 @@ export type MapPlace = Place & {
     avatarUrl?: string | null
     note?: string | null
     voteType: VoteType
+    going?: boolean
+    voteTime?: string | null
     friendship?: {
       status: FriendListItem['status']
       direction: FriendListItem['direction']

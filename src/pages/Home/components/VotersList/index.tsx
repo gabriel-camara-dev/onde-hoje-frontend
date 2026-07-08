@@ -44,7 +44,21 @@ export function VotersList({
                   @{voter.username}
                 </span>
               )}
-              <VoteTypeBadge voteType={voter.voteType} />
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    voter.going === false
+                      ? 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200'
+                      : 'bg-teal-soft text-teal'
+                  }`}
+                >
+                  {voter.going === false ? 'nao vai' : 'vai'}
+                </span>
+                {voter.voteTime && (
+                  <span className="text-[11px] font-medium text-muted">as {voter.voteTime}</span>
+                )}
+                <VoteTypeBadge voteType={voter.voteType} />
+              </div>
               {voter.note && <p className="mt-1 text-sm text-muted">{voter.note}</p>}
             </div>
             {voter.username && voter.publicId !== currentUserPublicId && (

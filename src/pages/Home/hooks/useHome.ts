@@ -127,6 +127,8 @@ export function useHome() {
       voteType?: VoteType
       groupPublicId?: string
       showIdentity?: boolean
+      going?: boolean
+      voteTime?: string
     }) => {
       await voteForPlace(input.placeId, {
         day: input.day,
@@ -134,6 +136,8 @@ export function useHome() {
         note: input.note,
         voteType: input.voteType,
         showIdentity: input.showIdentity,
+        going: input.going,
+        voteTime: input.voteTime,
       })
     },
     onSuccess: async (_data, input) => {
@@ -155,6 +159,8 @@ export function useHome() {
       voteType?: VoteType
       groupPublicId?: string
       showIdentity?: boolean
+      going?: boolean
+      voteTime?: string
     }) => {
       const place = await createPlace(input.draft)
       await voteForPlace(place.id, {
@@ -163,6 +169,8 @@ export function useHome() {
         note: input.note,
         voteType: input.voteType,
         showIdentity: input.showIdentity,
+        going: input.going,
+        voteTime: input.voteTime,
       })
     },
     onSuccess: async (_data, input) => {
@@ -284,6 +292,8 @@ export function useHome() {
       note: String(form.get('note') || '') || undefined,
       voteType: voteTypeFrom(form),
       showIdentity: form.get('showIdentity') === 'on',
+      going: form.get('going') !== 'false',
+      voteTime: String(form.get('voteTime') || '') || undefined,
     })
   }
 
@@ -312,6 +322,8 @@ export function useHome() {
       note: String(form.get('note') || '') || undefined,
       voteType: voteTypeFrom(form),
       showIdentity: form.get('showIdentity') === 'on',
+      going: form.get('going') !== 'false',
+      voteTime: String(form.get('voteTime') || '') || undefined,
     })
   }
 
