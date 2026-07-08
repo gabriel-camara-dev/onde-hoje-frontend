@@ -68,8 +68,10 @@ const compactParams = (params: Record<string, string | number | undefined>) =>
 export async function getTodayMap(filters: MapFilters) {
   // axiosPrivate so the auth token (when present) is sent and the API can
   // include the voters of each place for logged-in users.
+  // myGroups=1: on the default "Todos os meus grupos" view the API aggregates
+  // public votes with the votes of every group the viewer belongs to.
   const response = await axiosPrivate.get<MapPlace[]>('/map/today', {
-    params: compactParams(filters),
+    params: compactParams({ ...filters, myGroups: '1' }),
   })
 
   return response.data
@@ -77,7 +79,7 @@ export async function getTodayMap(filters: MapFilters) {
 
 export async function getTopPlaces(filters: MapFilters & { limit?: number }) {
   const response = await axiosPrivate.get<MapPlace[]>('/map/top-places', {
-    params: compactParams({ limit: 10, ...filters }),
+    params: compactParams({ limit: 10, ...filters, myGroups: '1' }),
   })
 
   return response.data

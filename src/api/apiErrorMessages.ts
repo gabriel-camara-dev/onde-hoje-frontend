@@ -54,7 +54,7 @@ const errorMessages: Record<string, string> = {
   'User with same email already exists': 'Esse email ja esta em uso.',
   'User with same username already exists': 'Esse username ja esta em uso.',
   'Validation failed': 'Confira os campos informados.',
-  'You can vote for at most 3 places per day': 'Voce atingiu o limite de 3 votos nesse dia.',
+  'You can vote for at most 6 places per week': 'Voce atingiu o limite de 6 votos na semana.',
   'latitude and longitude are required when radiusKm is provided':
     'Latitude e longitude sao obrigatorias quando o raio e informado.',
 }
@@ -69,8 +69,11 @@ const errorPatterns: Array<[RegExp, string]> = [
   [/^Too big:/i, 'O valor informado e muito grande.'],
   [/^Invalid input:/i, 'Valor informado invalido.'],
   [/^Invalid enum value/i, 'Opcao informada invalida.'],
-  [/^Vote limit exceeded/i, 'Voce atingiu o limite de votos para esse dia.'],
-  [/^You can vote (?:in|for) at most (\d+) places per day$/i, 'Voce atingiu o limite de $1 votos nesse dia.'],
+  [/^Vote limit exceeded/i, 'Voce atingiu o limite de votos da semana.'],
+  [
+    /^You can vote (?:in|for) at most (\d+) places per (?:day|week)$/i,
+    'Voce atingiu o limite de $1 votos na semana.',
+  ],
 ]
 
 export function translateErrorMessage(message: string, status?: number) {

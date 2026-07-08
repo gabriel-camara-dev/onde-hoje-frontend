@@ -20,7 +20,7 @@ import { formatInputDate } from '../../../lib/date'
 import { useUserStore } from '../../../stores/userStore'
 import { loadHomeMapFilters, saveHomeMapFilters } from '../homeMapFiltersStorage'
 import { voteTypeOptions } from '../homeVoteTypeOptions'
-import { addMonths, countUserActiveVotesForDay, dateOnly, isAllowedVoteDay } from '../homeVotingUtils'
+import { addMonths, countUserActiveVotesForWeek, dateOnly, isAllowedVoteDay } from '../homeVotingUtils'
 
 const today = formatInputDate(new Date())
 const weekTo = formatInputDate(new Date(Date.now() + 6 * 24 * 60 * 60 * 1000))
@@ -219,7 +219,7 @@ export function useHome() {
   // voters can span the whole week (range view), so checking that list would give
   // false positives and make "Tirar meu voto" target a day with no vote.
   const selectedPlaceHasUserVote = Boolean(selectedPlaceUserVote)
-  const userVotesForSelectedDay = countUserActiveVotesForDay(myVotesQuery.data, filters.day)
+  const userVotesThisWeek = countUserActiveVotesForWeek(myVotesQuery.data, filters.day)
   const isVotingPending =
     voteMutation.isPending || createAndVoteMutation.isPending || cancelVoteMutation.isPending
 
@@ -432,7 +432,7 @@ export function useHome() {
     isVotingPending,
     requestedFriendUsernames,
     requestFriendPending: requestFriendshipMutation.isPending,
-    userVotesForSelectedDay,
+    userVotesThisWeek,
     showRequireAccountModal,
     isSidebarLoading:
       mapQuery.isLoading ||

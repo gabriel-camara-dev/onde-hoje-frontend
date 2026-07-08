@@ -13,11 +13,13 @@ type HomeSidebarProps = {
   isWeekView?: boolean
   groups: Group[]
   topPlaces: MapPlace[]
-  userVotesForSelectedDay: number
+  userVotesThisWeek: number
   onGroupChange: (groupPublicId?: string) => void
   onSelectPlace: (place: MapPlace) => void
   onWeekViewChange: (week: boolean) => void
 }
+
+const WEEKLY_VOTE_LIMIT = 6
 
 export function HomeSidebar({
   errors = [],
@@ -26,7 +28,7 @@ export function HomeSidebar({
   isWeekView,
   groups,
   topPlaces,
-  userVotesForSelectedDay,
+  userVotesThisWeek,
   onGroupChange,
   onSelectPlace,
   onWeekViewChange,
@@ -85,9 +87,13 @@ export function HomeSidebar({
           )}
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Metric icon={Vote} label="meus votos" value={userVotesForSelectedDay} />
-          <Metric icon={CalendarDays} label="limite" value={3} />
+          <Metric icon={Vote} label="votos na semana" value={userVotesThisWeek} />
+          <Metric icon={CalendarDays} label="limite semanal" value={WEEKLY_VOTE_LIMIT} />
         </div>
+        <p className="mt-2 text-center text-xs font-medium text-muted">
+          Voce pode votar em ate {WEEKLY_VOTE_LIMIT} lugares por semana ({userVotesThisWeek}/
+          {WEEKLY_VOTE_LIMIT} usados).
+        </p>
       </section>
 
       <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-2.5 text-ink shadow-panel backdrop-blur">

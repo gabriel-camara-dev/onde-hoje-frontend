@@ -56,7 +56,7 @@ export default function Home() {
           isWeekView={home.isWeekView}
           groups={home.activeGroups}
           topPlaces={home.topPlaces}
-          userVotesForSelectedDay={home.userVotesForSelectedDay}
+          userVotesThisWeek={home.userVotesThisWeek}
           onGroupChange={home.changeGroup}
           onSelectPlace={home.selectPlace}
           onWeekViewChange={home.setWeekView}
