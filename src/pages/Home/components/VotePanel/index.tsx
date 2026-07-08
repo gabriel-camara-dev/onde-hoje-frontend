@@ -21,7 +21,6 @@ type VotePanelProps = {
   placeName?: string
   selectedDay: string
   selectedGroupPublicId?: string
-  subtitle?: string
   voteCount?: number
 }
 
@@ -41,7 +40,6 @@ export function VotePanel({
   placeName,
   selectedDay,
   selectedGroupPublicId,
-  subtitle,
   voteCount,
 }: VotePanelProps) {
   const submitLabel = isFreeMapPoint
@@ -64,8 +62,9 @@ export function VotePanel({
     return (
       <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-3 text-ink shadow-panel backdrop-blur">
         <p className="mb-2 text-xs font-semibold uppercase text-teal">Seu voto</p>
-        <h2 className="text-2xl font-semibold">{placeName ?? 'Lugar selecionado'}</h2>
-        {subtitle && <p className="mt-2 text-sm text-muted">{subtitle}</p>}
+        <p className="text-sm text-ink">
+          Voce ja votou aqui para <strong>{formatDisplayDate(selectedDay)}</strong>.
+        </p>
         {voteCount !== undefined && (
           <span className="mt-3 inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-semibold text-teal">
             {voteCount} votos em {formatDisplayDate(selectedDay)}
@@ -178,6 +177,20 @@ export function VotePanel({
               name="note"
               rows={2}
             />
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-surface-muted px-3 py-2.5 text-sm font-medium text-ink">
+            <input
+              className="mt-0.5 size-4 accent-teal"
+              defaultChecked
+              name="showIdentity"
+              type="checkbox"
+            />
+            <span>
+              Permitir que vejam que fui eu que votei
+              <span className="mt-0.5 block text-xs font-normal text-muted">
+                Se desmarcar, seu voto continua contando, mas seu nome nao aparece na lista.
+              </span>
+            </span>
           </label>
           <Button disabled={!placeName || isPending} type="submit">
             {isPending && <LoaderCircle className="animate-spin" size={17} />}

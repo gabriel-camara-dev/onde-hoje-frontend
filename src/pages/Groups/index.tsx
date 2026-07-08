@@ -15,6 +15,7 @@ import {
   listPublicGroups,
   removeGroupMember,
   requestFriendship,
+  respondGroupInvite,
 } from '../../api/ondeHoje'
 import Button from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -102,6 +103,13 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     queryFn: listFriends,
   })
 
+  useEffect(() => {
+    const loadError = groupsQuery.error ?? myGroupsQuery.error
+    if (loadError) {
+      toast.error(loadError.message)
+    }
+  }, [groupsQuery.error, myGroupsQuery.error])
+
   const createMutation = useMutation({
     mutationFn: (form: FormData) =>
       createGroup({
@@ -149,7 +157,25 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
       inviteGroupMember(groupId, username.replace(/^@/, '')),
     onSuccess: () => {
       refreshGroups()
-      toast.success('Membro convidado.')
+      toast.success('Convite enviado. A pessoa precisa aceitar para entrar.')
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
+  const respondInviteMutation = useMutation({
+    mutationFn: ({ groupId, action }: { groupId: string; action: 'accept' | 'decline' }) =>
+      respondGroupInvite(groupId, action),
+    onSuccess: (_data, variables) => {
+      refreshGroups()
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+
+      if (variables.action === 'decline') {
+        setSelectedGroupId(undefined)
+        toast.success('Convite recusado.')
+      } else {
+        toast.success('Voce entrou no grupo.')
+      }
     },
     onError: (error) => {
       toast.error(error.message)
@@ -297,11 +323,10 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
   return (
     <>
       <StatusBanner
-        error={groupsQuery.error?.message ?? myGroupsQuery.error?.message}
         loading={groupsQuery.isLoading || myGroupsQuery.isLoading || friendsQuery.isLoading}
       />
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(360px,.8fr)_minmax(0,1.2fr)]">
+      <section className="grid items-start gap-4 xl:grid-cols-[minmax(360px,.8fr)_minmax(0,1.2fr)]">
         <Panel>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -420,6 +445,16 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
             onLeave={
               selectedMyGroup?.myStatus === 'ACTIVE'
                 ? () => leaveMutation.mutate(selectedGroup.id)
+                : undefined
+            }
+            onAcceptInvite={
+              selectedMyGroup?.myStatus === 'INVITED'
+                ? () => respondInviteMutation.mutate({ groupId: selectedGroup.id, action: 'accept' })
+                : undefined
+            }
+            onDeclineInvite={
+              selectedMyGroup?.myStatus === 'INVITED'
+                ? () => respondInviteMutation.mutate({ groupId: selectedGroup.id, action: 'decline' })
                 : undefined
             }
             onLoginToJoin={

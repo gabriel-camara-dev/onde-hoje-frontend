@@ -1,4 +1,4 @@
-import { Check, Copy, Link2, LogOut, Send, UserPlus } from 'lucide-react'
+import { Check, Copy, Link2, LogOut, Send, UserPlus, X } from 'lucide-react'
 import type { FriendListItem, MyGroup } from '../../../../@types/OndeHoje'
 import type { PublicGroupDetails } from '../../../../api/ondeHoje'
 import Button from '../../../../components/ui/Button'
@@ -19,6 +19,8 @@ export function GroupDetail({
   inviteUrl,
   isRequestingFriend,
   onAccept,
+  onAcceptInvite,
+  onDeclineInvite,
   onInvite,
   onJoin,
   onLeave,
@@ -34,6 +36,8 @@ export function GroupDetail({
   inviteUrl: string
   isRequestingFriend?: boolean
   onAccept?: (username: string) => void
+  onAcceptInvite?: () => void
+  onDeclineInvite?: () => void
   onInvite?: (username: string) => void
   onJoin?: () => void
   onLeave?: () => void
@@ -44,6 +48,7 @@ export function GroupDetail({
 }) {
   const canManage = 'myRole' in group && group.myRole === 'OWNER' && group.myStatus === 'ACTIVE'
   const isMember = 'myRole' in group && group.myStatus === 'ACTIVE'
+  const isInvited = 'myStatus' in group && group.myStatus === 'INVITED'
   const {
     activeMembers,
     confirmAction,
@@ -97,7 +102,29 @@ export function GroupDetail({
           </div>
         </div>
 
-        {(onJoin || onLoginToJoin) && !isMember && group.privacy === 'PUBLIC' && (
+        {isInvited && (onAcceptInvite || onDeclineInvite) && (
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-teal/40 bg-teal-soft p-3">
+            <p className="text-sm font-semibold text-ink">
+              Voce foi convidado para este grupo. Aceite para participar e votar junto.
+            </p>
+            <div className="flex gap-2">
+              {onAcceptInvite && (
+                <Button type="button" onClick={onAcceptInvite}>
+                  <Check size={17} />
+                  Aceitar convite
+                </Button>
+              )}
+              {onDeclineInvite && (
+                <Button type="button" variant="secondary" onClick={onDeclineInvite}>
+                  <X size={17} />
+                  Recusar
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {(onJoin || onLoginToJoin) && !isMember && !isInvited && group.privacy === 'PUBLIC' && (
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-muted p-3">
             <p className="text-sm text-muted">
               Voce pode entrar neste grupo e votar junto com as pessoas que ja participam dele.

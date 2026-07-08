@@ -23,14 +23,14 @@ export function VotersList({
   }
 
   return (
-    <section className="rounded-lg border border-line bg-surface p-4 shadow-panel">
+    <section className="rounded-lg border border-line bg-surface-muted p-3">
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold uppercase text-teal">Quem votou aqui</h3>
-        <span className="rounded-full bg-teal-soft px-3 py-1 text-xs font-semibold text-teal">
+        <h3 className="text-xs font-semibold uppercase text-muted">Quem votou aqui</h3>
+        <span className="rounded-full bg-teal-soft px-2.5 py-0.5 text-xs font-semibold text-teal">
           {voters.length}
         </span>
       </div>
-      <div className="grid max-h-56 gap-2 overflow-y-auto pr-1">
+      <div className="grid max-h-52 gap-2 overflow-y-auto pr-1">
         {voters.map((voter) => (
           <div
             key={voter.publicId}

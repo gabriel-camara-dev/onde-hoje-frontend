@@ -48,7 +48,7 @@ export function MemberSection({
                 <strong className="block truncate text-sm">{member.user.name}</strong>
                 <small className="text-teal">@{member.user.username}</small>
               </span>
-              <span className="inline-flex gap-2">
+              <span className="inline-flex shrink-0 gap-2">
                 {member.user.publicId !== currentUserPublicId && (
                   <FriendshipButton
                     friendship={friendByUsername.get(member.user.username)}
@@ -60,22 +60,24 @@ export function MemberSection({
                 )}
                 {onAccept && (
                   <Button
-                    className="size-9 p-0"
+                    aria-label="Aceitar membro"
+                    className="size-10 shrink-0 p-0"
                     type="button"
                     variant="secondary"
                     onClick={() => onAccept(member.user.username)}
                   >
-                    <Check size={16} />
+                    <Check size={18} />
                   </Button>
                 )}
                 {onRemove && member.role !== 'OWNER' && (
                   <Button
-                    className="size-9 p-0"
+                    aria-label="Remover membro"
+                    className="size-10 shrink-0 p-0"
                     type="button"
                     variant="danger"
                     onClick={() => onRemove(member.user.username)}
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </Button>
                 )}
               </span>

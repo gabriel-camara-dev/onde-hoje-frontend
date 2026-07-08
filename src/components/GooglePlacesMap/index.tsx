@@ -356,7 +356,7 @@ export function GooglePlacesMap({
 
     autocompleteDebounceRef.current = window.setTimeout(() => {
       fetchAutocompleteSuggestions(query)
-    }, 220)
+    }, 120)
   }
 
   async function searchByText(query: string) {
@@ -767,10 +767,21 @@ function createVoteMarkerIcon(
   const pad = highlighted ? 26 : 0
   const viewWidth = innerWidth + pad * 2
   const viewHeight = innerHeight + pad * 2
-  const width = Math.round((pinPixelWidth * viewWidth) / innerWidth)
-  const height = Math.round((width * viewHeight) / viewWidth)
-  const anchorX = Math.round((width * (27 + pad)) / viewWidth)
-  const anchorY = Math.round((height * (64 + pad)) / viewHeight)
+  let width = Math.round((pinPixelWidth * viewWidth) / innerWidth)
+  let height = Math.round((width * viewHeight) / viewWidth)
+  let anchorX = Math.round((width * (27 + pad)) / viewWidth)
+  let anchorY = Math.round((height * (64 + pad)) / viewHeight)
+
+  // Hard cap on the on-map footprint so a very voted (and highlighted) place
+  // never renders as a giant marker covering the map.
+  const MAX_MARKER_WIDTH = highlighted ? 92 : 64
+  if (width > MAX_MARKER_WIDTH) {
+    const factor = MAX_MARKER_WIDTH / width
+    width = Math.round(width * factor)
+    height = Math.round(height * factor)
+    anchorX = Math.round(anchorX * factor)
+    anchorY = Math.round(anchorY * factor)
+  }
 
   const centerX = 27 + pad
   const centerY = 27 + pad

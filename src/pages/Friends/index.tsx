@@ -13,12 +13,11 @@ export default function FriendsPage() {
     requestFriend,
     accept,
     reject,
+    remove,
     received,
     accepted,
     sent,
-    error,
     isLoading,
-    message,
   } = useFriends()
 
   if (!user) {
@@ -32,7 +31,7 @@ export default function FriendsPage() {
 
   return (
     <>
-      <StatusBanner error={error} loading={isLoading} message={message} />
+      <StatusBanner loading={isLoading} />
       <section className="grid gap-4 lg:grid-cols-[340px_1fr]">
         <FriendRequestPanel
           canLink={Boolean(user.username)}
@@ -45,6 +44,7 @@ export default function FriendsPage() {
           sent={sent}
           onAccept={accept}
           onReject={reject}
+          onRemove={remove}
         />
       </section>
 

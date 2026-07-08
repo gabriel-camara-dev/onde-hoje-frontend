@@ -29,12 +29,13 @@ export default function Home() {
           onAddFriend={home.addFriend}
           onCancelVote={home.cancelSelectedVote}
           onClose={home.closeSelectedPlace}
+          onCopyVoteLink={home.copyVoteLink}
           onDayChange={home.changeMapDay}
           onSubmit={home.submitVote}
         />
       )}
 
-      <div className="relative -mx-3 -mb-3 bg-paper md:h-[calc(100vh-98px)] md:overflow-hidden md:bg-surface lg:-mx-5 lg:-mb-5 lg:h-[calc(100vh-114px)]">
+      <div className="relative -mx-3 bg-paper md:h-[calc(100dvh-158px)] md:overflow-hidden md:bg-surface lg:-mx-5 lg:h-[calc(100dvh-178px)]">
         <GooglePlacesMap
           className="h-[58vh] min-h-[420px] rounded-none border-x-0 border-t-0 shadow-none md:h-full md:min-h-0 md:border-0"
           city={home.filters.city}
@@ -52,11 +53,13 @@ export default function Home() {
         <HomeSidebar
           filters={home.filters}
           isLoading={home.isSidebarLoading}
+          isWeekView={home.isWeekView}
           groups={home.activeGroups}
           topPlaces={home.topPlaces}
           userVotesForSelectedDay={home.userVotesForSelectedDay}
           onGroupChange={home.changeGroup}
           onSelectPlace={home.selectPlace}
+          onWeekViewChange={home.setWeekView}
         />
       </div>
     </>
