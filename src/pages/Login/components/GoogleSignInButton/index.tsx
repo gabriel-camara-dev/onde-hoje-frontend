@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../../../../api/api'
 
-export function GoogleSignInButton({ onBeforeRedirect }: { onBeforeRedirect: () => void }) {
+export function GoogleSignInButton({ onBeforeRedirect }: { onBeforeRedirect?: () => void }) {
   return (
     <a
       className="mb-3 inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-line bg-surface px-4 py-2 text-sm font-medium text-ink transition hover:bg-teal-soft"

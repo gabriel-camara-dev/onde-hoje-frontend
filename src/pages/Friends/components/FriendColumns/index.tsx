@@ -8,6 +8,7 @@ type FriendColumnsProps = {
   sent: FriendListItem[]
   onAccept: (username: string) => void
   onReject: (username: string) => void
+  onRemove: (username: string) => void
 }
 
 export function FriendColumns({
@@ -16,6 +17,7 @@ export function FriendColumns({
   sent,
   onAccept,
   onReject,
+  onRemove,
 }: FriendColumnsProps) {
   return (
     <Panel>
@@ -26,8 +28,8 @@ export function FriendColumns({
           rejectAction={onReject}
           title="Recebidos"
         />
-        <FriendColumn items={accepted} title="Amigos" />
-        <FriendColumn items={sent} title="Enviados" />
+        <FriendColumn items={accepted} removeAction={onRemove} removeKind="friend" title="Amigos" />
+        <FriendColumn items={sent} removeAction={onRemove} removeKind="sent" title="Enviados" />
       </div>
     </Panel>
   )

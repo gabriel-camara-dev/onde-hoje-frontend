@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { AuthShell } from '../../components/AuthShell'
+import { GoogleSignInButton } from '../Login/components'
 import { RegisterForm } from './components'
 import { useRegister } from './hooks/useRegister'
 
@@ -27,6 +28,12 @@ export function Register() {
         </>
       }
     >
+      <GoogleSignInButton />
+      <div className="mb-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-medium uppercase text-muted">
+        <span className="h-px bg-line" />
+        ou
+        <span className="h-px bg-line" />
+      </div>
       <RegisterForm />
     </AuthShell>
   )

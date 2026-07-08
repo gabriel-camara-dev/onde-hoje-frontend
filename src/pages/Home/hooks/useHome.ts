@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   cancelVoteForPlace,
@@ -21,14 +22,17 @@ import { voteTypeOptions } from '../homeVoteTypeOptions'
 import { addMonths, countUserActiveVotesForDay, dateOnly, isAllowedVoteDay } from '../homeVotingUtils'
 
 const today = formatInputDate(new Date())
+const weekTo = formatInputDate(new Date(Date.now() + 6 * 24 * 60 * 60 * 1000))
 const maxVoteDay = formatInputDate(addMonths(new Date(), 1))
-const defaultMapFilters: MapFilters = { city: '', day: today, q: '' }
+const defaultMapFilters: MapFilters = { city: '', day: today, q: '', from: today, to: weekTo }
 
 export function useHome() {
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
   const accessToken = useUserStore((state) => state.accessToken)
   const user = useUserStore((state) => state.user)
   const [filters, setFilters] = useState<MapFilters>(() => loadHomeMapFilters(defaultMapFilters))
+  const handledVoteLinkRef = useRef(false)
   const [selectedPlace, setSelectedPlace] = useState<MapPlace>()
   const [draftPlace, setDraftPlace] = useState<GooglePlaceDraft>()
   const [requestedFriendUsernames, setRequestedFriendUsernames] = useState<Set<string>>(new Set())
@@ -60,6 +64,49 @@ export function useHome() {
   })
 
   const places = useMemo(() => mapQuery.data ?? [], [mapQuery.data])
+  const voteLinkPlaceId = searchParams.get('vote')
+
+  // Vote link (?vote=<placeId>&city=&day=): focus the shared place so it loads,
+  // then open its vote dialog once the map returns it.
+  useEffect(() => {
+    if (!voteLinkPlaceId) {
+      return
+    }
+
+    const linkCity = searchParams.get('city')
+    const linkDay = searchParams.get('day')
+
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      ...(linkCity && linkCity !== currentFilters.city ? { city: linkCity } : {}),
+      ...(linkDay && isAllowedVoteDay(linkDay, today, maxVoteDay)
+        ? { day: linkDay, from: undefined, to: undefined }
+        : {}),
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voteLinkPlaceId])
+
+  useEffect(() => {
+    if (!voteLinkPlaceId || handledVoteLinkRef.current) {
+      return
+    }
+
+    const place = places.find((item) => item.id === voteLinkPlaceId)
+
+    if (!place) {
+      return
+    }
+
+    handledVoteLinkRef.current = true
+    setSelectedPlace(place)
+
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('vote')
+    nextParams.delete('city')
+    nextParams.delete('day')
+    setSearchParams(nextParams, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [places, voteLinkPlaceId])
   const topPlaces = useMemo(() => topPlacesQuery.data ?? [], [topPlacesQuery.data])
   const activeGroups = useMemo(
     () => (myGroupsQuery.data ?? []).filter((group) => group.myStatus === 'ACTIVE'),
@@ -80,12 +127,14 @@ export function useHome() {
       note?: string
       voteType?: VoteType
       groupPublicId?: string
+      showIdentity?: boolean
     }) => {
       await voteForPlace(input.placeId, {
         day: input.day,
         groupPublicId: input.groupPublicId,
         note: input.note,
         voteType: input.voteType,
+        showIdentity: input.showIdentity,
       })
     },
     onSuccess: async (_data, input) => {
@@ -106,6 +155,7 @@ export function useHome() {
       note?: string
       voteType?: VoteType
       groupPublicId?: string
+      showIdentity?: boolean
     }) => {
       const place = await createPlace(input.draft)
       await voteForPlace(place.id, {
@@ -113,6 +163,7 @@ export function useHome() {
         groupPublicId: input.groupPublicId,
         note: input.note,
         voteType: input.voteType,
+        showIdentity: input.showIdentity,
       })
     },
     onSuccess: async (_data, input) => {
@@ -165,10 +216,10 @@ export function useHome() {
       vote.place.id === selectedPlaceForDay?.id &&
       (!filters.groupPublicId || vote.group?.id === filters.groupPublicId)
   )
-  const selectedPlaceHasUserVote = Boolean(
-    selectedPlaceUserVote ??
-      selectedPlaceForDay?.voters.some((voter) => voter.publicId === user?.id)
-  )
+  // Only rely on the user's vote for the *selected day* (from my-votes). The map
+  // voters can span the whole week (range view), so checking that list would give
+  // false positives and make "Tirar meu voto" target a day with no vote.
+  const selectedPlaceHasUserVote = Boolean(selectedPlaceUserVote)
   const userVotesForSelectedDay = countUserActiveVotesForDay(myVotesQuery.data, filters.day)
   const isVotingPending =
     voteMutation.isPending || createAndVoteMutation.isPending || cancelVoteMutation.isPending
@@ -233,6 +284,7 @@ export function useHome() {
       groupPublicId: String(form.get('groupPublicId') || '') || undefined,
       note: String(form.get('note') || '') || undefined,
       voteType: voteTypeFrom(form),
+      showIdentity: form.get('showIdentity') === 'on',
     })
   }
 
@@ -260,6 +312,7 @@ export function useHome() {
       groupPublicId: String(form.get('groupPublicId') || '') || undefined,
       note: String(form.get('note') || '') || undefined,
       voteType: voteTypeFrom(form),
+      showIdentity: form.get('showIdentity') === 'on',
     })
   }
 
@@ -291,7 +344,34 @@ export function useHome() {
       return
     }
 
-    setFilters((currentFilters) => ({ ...currentFilters, day }))
+    // Picking a specific day leaves the 7-day week view.
+    setFilters((currentFilters) => ({ ...currentFilters, day, from: undefined, to: undefined }))
+  }
+
+  function setWeekView(week: boolean) {
+    setFilters((currentFilters) =>
+      week
+        ? { ...currentFilters, from: today, to: weekTo }
+        : { ...currentFilters, from: undefined, to: undefined }
+    )
+  }
+
+  async function copyVoteLink(placeId: string, city?: string | null) {
+    const url = new URL(window.location.origin)
+    url.searchParams.set('vote', placeId)
+
+    if (city) {
+      url.searchParams.set('city', city)
+    }
+
+    url.searchParams.set('day', filters.day)
+
+    try {
+      await navigator.clipboard.writeText(url.toString())
+      toast.success('Link para votar copiado.')
+    } catch {
+      toast.error('Nao foi possivel copiar o link agora.')
+    }
   }
 
   function closeSelectedPlace() {
@@ -338,6 +418,7 @@ export function useHome() {
   return {
     // state
     filters,
+    isWeekView: Boolean(filters.from && filters.to),
     minDay: today,
     maxDay: maxVoteDay,
     places,
@@ -365,6 +446,8 @@ export function useHome() {
     closeRequireAccountModal: () => setShowRequireAccountModal(false),
     closeSelectedPlace,
     changeMapDay,
+    setWeekView,
+    copyVoteLink,
     changeCity,
     changeGroup,
     selectPlace,

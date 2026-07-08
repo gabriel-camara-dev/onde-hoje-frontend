@@ -24,10 +24,19 @@ function timeAgo(iso: string) {
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { notifications, unreadCount, markRead, markAllRead } = useNotifications()
+  const { notifications, unreadCount, hasMore, isLoadingMore, loadMore, markRead, markAllRead } =
+    useNotifications()
+
+  function handleScroll(event: React.UIEvent<HTMLDivElement>) {
+    const el = event.currentTarget
+    if (hasMore && !isLoadingMore && el.scrollHeight - el.scrollTop - el.clientHeight < 60) {
+      loadMore()
+    }
+  }
 
   const respondMutation = useMutation({
     mutationFn: ({ groupPublicId, action }: { groupPublicId: string; action: 'accept' | 'decline' }) =>
@@ -59,6 +68,12 @@ export function NotificationBell() {
   function openNotification(notification: AppNotification) {
     if (!notification.read) {
       markRead(notification.id)
+    }
+
+    // Vote notifications expand inline to reveal who voted (Twitter-likes style).
+    if (notification.type === 'PLACE_VOTE') {
+      setExpandedId((current) => (current === notification.id ? null : notification.id))
+      return
     }
 
     setIsOpen(false)
@@ -101,7 +116,7 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-[min(92vw,22rem)] overflow-hidden rounded-lg border border-line bg-surface shadow-panel">
+        <div className="fixed right-3 top-[68px] z-[80] flex max-h-[75vh] w-[min(92vw,22rem)] flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-panel lg:right-5">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <span className="text-sm font-semibold text-ink">Notificacoes</span>
             {unreadCount > 0 && (
@@ -115,7 +130,7 @@ export function NotificationBell() {
             )}
           </div>
 
-          <div className="max-h-[70vh] overflow-y-auto">
+          <div className="overflow-y-auto" onScroll={handleScroll}>
             {notifications.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-muted">Nenhuma notificacao ainda.</p>
             ) : (
@@ -171,6 +186,28 @@ export function NotificationBell() {
                           </button>
                         </div>
                       )}
+
+                      {notification.type === 'PLACE_VOTE' &&
+                        expandedId === notification.id &&
+                        (notification.data?.voters?.length ?? 0) > 0 && (
+                          <div className="mt-2 grid max-h-[7.5rem] gap-1.5 overflow-y-auto rounded-md border border-line bg-surface p-2">
+                            {notification.data?.voters?.map((voter) => (
+                              <div key={voter.publicId} className="flex items-center gap-2">
+                                <Avatar
+                                  name={voter.name}
+                                  src={voter.avatarUrl ?? undefined}
+                                  className="size-7 shrink-0 rounded-md"
+                                />
+                                <div className="min-w-0">
+                                  <p className="truncate text-xs font-semibold text-ink">{voter.name}</p>
+                                  {voter.username && (
+                                    <p className="truncate text-[11px] text-teal">@{voter.username}</p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                     </div>
 
                     {!notification.read && (
@@ -179,6 +216,17 @@ export function NotificationBell() {
                   </div>
                 )
               })
+            )}
+
+            {hasMore && (
+              <button
+                className="w-full cursor-pointer border-t border-line px-4 py-3 text-center text-xs font-semibold text-teal transition hover:bg-teal-soft disabled:opacity-60"
+                disabled={isLoadingMore}
+                type="button"
+                onClick={() => loadMore()}
+              >
+                {isLoadingMore ? 'Carregando...' : 'Carregar mais'}
+              </button>
             )}
           </div>
         </div>

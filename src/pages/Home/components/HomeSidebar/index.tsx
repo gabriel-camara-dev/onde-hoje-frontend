@@ -10,22 +10,26 @@ type HomeSidebarProps = {
   errors?: Array<string | undefined>
   filters: MapFilters
   isLoading?: boolean
+  isWeekView?: boolean
   groups: Group[]
   topPlaces: MapPlace[]
   userVotesForSelectedDay: number
   onGroupChange: (groupPublicId?: string) => void
   onSelectPlace: (place: MapPlace) => void
+  onWeekViewChange: (week: boolean) => void
 }
 
 export function HomeSidebar({
   errors = [],
   filters,
   isLoading,
+  isWeekView,
   groups,
   topPlaces,
   userVotesForSelectedDay,
   onGroupChange,
   onSelectPlace,
+  onWeekViewChange,
 }: HomeSidebarProps) {
   return (
     <aside className="grid content-start gap-3 p-3 md:pointer-events-none md:absolute md:right-4 md:top-4 md:z-20 md:w-[332px] md:p-0">
@@ -41,6 +45,28 @@ export function HomeSidebar({
           Busque um lugar no Google Maps, salve na base e vote. Lugares com votos aparecem como
           marcadores reais no mapa.
         </p>
+
+        <div className="mt-4 grid grid-cols-2 gap-1 rounded-lg border border-line bg-surface-muted p-1">
+          <button
+            className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
+              isWeekView ? 'bg-teal text-on-teal' : 'text-muted hover:text-ink'
+            }`}
+            type="button"
+            onClick={() => onWeekViewChange(true)}
+          >
+            <CalendarDays size={15} />
+            Proximos 7 dias
+          </button>
+          <button
+            className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
+              isWeekView ? 'text-muted hover:text-ink' : 'bg-teal text-on-teal'
+            }`}
+            type="button"
+            onClick={() => onWeekViewChange(false)}
+          >
+            {formatDisplayDate(filters.day)}
+          </button>
+        </div>
 
         <div className="mt-4">
           <Select
@@ -71,7 +97,7 @@ export function HomeSidebar({
             Mais votados
           </h2>
           <span className="shrink-0 text-xs font-medium text-muted">
-            {formatDisplayDate(filters.day)}
+            {isWeekView ? 'Proximos 7 dias' : formatDisplayDate(filters.day)}
           </span>
         </div>
         <div className="grid gap-2">

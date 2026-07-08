@@ -25,6 +25,9 @@ export type MapFilters = {
   q: string
   state?: string
   groupPublicId?: string
+  // When both are set the map aggregates votes across the range (week view).
+  from?: string
+  to?: string
 }
 
 export type GlobalRankingFilters = {
@@ -63,7 +66,9 @@ const compactParams = (params: Record<string, string | number | undefined>) =>
   )
 
 export async function getTodayMap(filters: MapFilters) {
-  const response = await axiosPublic.get<MapPlace[]>('/map/today', {
+  // axiosPrivate so the auth token (when present) is sent and the API can
+  // include the voters of each place for logged-in users.
+  const response = await axiosPrivate.get<MapPlace[]>('/map/today', {
     params: compactParams(filters),
   })
 
@@ -71,7 +76,7 @@ export async function getTodayMap(filters: MapFilters) {
 }
 
 export async function getTopPlaces(filters: MapFilters & { limit?: number }) {
-  const response = await axiosPublic.get<MapPlace[]>('/map/top-places', {
+  const response = await axiosPrivate.get<MapPlace[]>('/map/top-places', {
     params: compactParams({ limit: 10, ...filters }),
   })
 
@@ -140,7 +145,13 @@ export async function registerUser(body: {
 
 export async function voteForPlace(
   placePublicId: string,
-  body: { day?: string; groupPublicId?: string; note?: string; voteType?: VoteType }
+  body: {
+    day?: string
+    groupPublicId?: string
+    note?: string
+    voteType?: VoteType
+    showIdentity?: boolean
+  }
 ) {
   const response = await axiosPrivate.post(`/places/${placePublicId}/votes`, body)
 
@@ -270,6 +281,10 @@ export async function rejectFriendship(username: string) {
   await axiosPrivate.post(`/friends/${username}/reject`)
 }
 
+export async function removeFriendship(username: string) {
+  await axiosPrivate.delete(`/friends/${username}`)
+}
+
 export async function listUsers(params: {
   page?: number
   name?: string
@@ -351,8 +366,10 @@ export async function getUserVoteHistory(publicId: string) {
   return response.data
 }
 
-export async function listNotifications() {
-  const response = await axiosPrivate.get<NotificationsResponse>('/notifications')
+export async function listNotifications(params: { limit?: number; offset?: number } = {}) {
+  const response = await axiosPrivate.get<NotificationsResponse>('/notifications', {
+    params: compactParams({ limit: params.limit ?? 5, offset: params.offset ?? 0 }),
+  })
 
   return response.data
 }

@@ -1,4 +1,5 @@
-import { X } from 'lucide-react'
+import { Link2, X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import type { Group, MapPlace } from '../../../../@types/OndeHoje'
 import type { GooglePlaceDraft } from '../../../../components/GooglePlacesMap'
 import { VotePanel } from '../VotePanel'
@@ -16,6 +17,7 @@ type PlaceVoteDialogProps = {
   onAddFriend: (username: string) => void
   onCancelVote: (form: FormData) => void
   onClose: () => void
+  onCopyVoteLink?: (placeId: string, city?: string | null) => void
   onDayChange: (day: string) => void
   onSubmit: (form: FormData) => void
   place?: MapPlace
@@ -36,6 +38,7 @@ export function PlaceVoteDialog({
   onAddFriend,
   onCancelVote,
   onClose,
+  onCopyVoteLink,
   onDayChange,
   onSubmit,
   place,
@@ -52,12 +55,15 @@ export function PlaceVoteDialog({
     nickname ?? googlePlaceName ?? draftPlace?.name ?? place?.name ?? 'Lugar selecionado'
   const placeAddress = draftPlace?.formattedAddress ?? place?.formattedAddress
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/55 px-3 py-4 backdrop-blur-sm">
-      <div className="flex min-h-full items-end justify-center md:items-center">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[90] bg-black/55 px-3 py-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div className="flex min-h-full items-center justify-center">
         <section
           aria-modal="true"
-          className="grid max-h-[calc(100vh-2rem)] w-full max-w-xl gap-3 overflow-y-auto rounded-lg border border-line bg-surface p-4 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)]"
+          className="grid max-h-[calc(100dvh-2rem)] w-full max-w-xl gap-3 overflow-y-auto rounded-lg border border-line bg-surface p-4 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)]"
           role="dialog"
           onClick={(event) => event.stopPropagation()}
         >
@@ -80,16 +86,6 @@ export function PlaceVoteDialog({
             </button>
           </div>
 
-          {place && (
-            <VotersList
-              currentUserPublicId={currentUserPublicId}
-              isPending={requestFriendPending}
-              requestedUsernames={requestedFriendUsernames}
-              voters={place.voters}
-              onAddFriend={onAddFriend}
-            />
-          )}
-
           <VotePanel
             groups={groups}
             hasUserVote={hasUserVote}
@@ -101,15 +97,36 @@ export function PlaceVoteDialog({
             googlePlaceName={googlePlaceName}
             placeName={draftPlace?.name ?? place?.name}
             selectedDay={selectedDay}
-            subtitle={draftPlace?.formattedAddress ?? place?.formattedAddress}
             voteCount={place?.voteCount}
             selectedGroupPublicId={selectedGroupPublicId}
             onCancelVote={onCancelVote}
             onDayChange={onDayChange}
             onSubmit={onSubmit}
           />
+
+          {place && onCopyVoteLink && (
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-surface-muted px-3 py-2 text-sm font-semibold text-ink transition hover:bg-teal-soft"
+              type="button"
+              onClick={() => onCopyVoteLink(place.id, place.city)}
+            >
+              <Link2 size={16} />
+              Copiar link para votar aqui
+            </button>
+          )}
+
+          {place && place.voters.length > 0 && (
+            <VotersList
+              currentUserPublicId={currentUserPublicId}
+              isPending={requestFriendPending}
+              requestedUsernames={requestedFriendUsernames}
+              voters={place.voters}
+              onAddFriend={onAddFriend}
+            />
+          )}
         </section>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

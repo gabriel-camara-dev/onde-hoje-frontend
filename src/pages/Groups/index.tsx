@@ -103,6 +103,13 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     queryFn: listFriends,
   })
 
+  useEffect(() => {
+    const loadError = groupsQuery.error ?? myGroupsQuery.error
+    if (loadError) {
+      toast.error(loadError.message)
+    }
+  }, [groupsQuery.error, myGroupsQuery.error])
+
   const createMutation = useMutation({
     mutationFn: (form: FormData) =>
       createGroup({
@@ -316,11 +323,10 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
   return (
     <>
       <StatusBanner
-        error={groupsQuery.error?.message ?? myGroupsQuery.error?.message}
         loading={groupsQuery.isLoading || myGroupsQuery.isLoading || friendsQuery.isLoading}
       />
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(360px,.8fr)_minmax(0,1.2fr)]">
+      <section className="grid items-start gap-4 xl:grid-cols-[minmax(360px,.8fr)_minmax(0,1.2fr)]">
         <Panel>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>

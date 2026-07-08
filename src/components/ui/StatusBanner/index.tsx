@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 type StatusBannerProps = {
   error?: string | null
   message?: string | null
@@ -5,7 +7,23 @@ type StatusBannerProps = {
 }
 
 export function StatusBanner({ error, loading, message }: StatusBannerProps) {
-  if (!error && !message && !loading) {
+  // Only surface the loading state if it lingers past 1s, so quick fetches
+  // (and refetches on focus/refresh) don't flash a "Carregando..." banner.
+  const [showLoading, setShowLoading] = useState(false)
+
+  useEffect(() => {
+    if (!loading) {
+      setShowLoading(false)
+      return
+    }
+
+    const timer = window.setTimeout(() => setShowLoading(true), 1000)
+    return () => window.clearTimeout(timer)
+  }, [loading])
+
+  const visibleLoading = Boolean(loading) && showLoading
+
+  if (!error && !message && !visibleLoading) {
     return null
   }
 
@@ -21,4 +39,3 @@ export function StatusBanner({ error, loading, message }: StatusBannerProps) {
     </div>
   )
 }
-

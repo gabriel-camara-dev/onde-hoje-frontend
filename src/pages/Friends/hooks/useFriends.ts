@@ -6,6 +6,7 @@ import {
   acceptFriendship,
   listFriends,
   rejectFriendship,
+  removeFriendship,
   requestFriendship,
 } from '../../../api/ondeHoje'
 import { useUserStore } from '../../../stores/userStore'
@@ -22,18 +23,49 @@ export function useFriends() {
     queryKey: ['friends'],
     queryFn: listFriends,
   })
+
+  function invalidateFriends() {
+    queryClient.invalidateQueries({ queryKey: ['friends'] })
+  }
+
   const requestMutation = useMutation({
     mutationFn: requestFriendship,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['friends'] }),
+    onSuccess: () => {
+      invalidateFriends()
+      toast.success('Solicitacao de amizade enviada.')
+    },
+    onError: (error: Error) => toast.error(error.message),
   })
   const acceptMutation = useMutation({
     mutationFn: acceptFriendship,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['friends'] }),
+    onSuccess: () => {
+      invalidateFriends()
+      toast.success('Amizade aceita.')
+    },
+    onError: (error: Error) => toast.error(error.message),
   })
   const rejectMutation = useMutation({
     mutationFn: rejectFriendship,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['friends'] }),
+    onSuccess: () => {
+      invalidateFriends()
+      toast.success('Pedido recusado.')
+    },
+    onError: (error: Error) => toast.error(error.message),
   })
+  const removeMutation = useMutation({
+    mutationFn: removeFriendship,
+    onSuccess: () => {
+      invalidateFriends()
+      toast.success('Amizade removida.')
+    },
+    onError: (error: Error) => toast.error(error.message),
+  })
+
+  useEffect(() => {
+    if (friendsQuery.error) {
+      toast.error(friendsQuery.error.message)
+    }
+  }, [friendsQuery.error])
 
   const friendInviteUsername = searchParams.get('add')?.trim().replace(/^@/, '') ?? ''
   const friendshipLink = user?.username
@@ -91,25 +123,10 @@ export function useFriends() {
     requestFriend,
     accept: (username: string) => acceptMutation.mutate(username),
     reject: (username: string) => rejectMutation.mutate(username),
+    remove: (username: string) => removeMutation.mutate(username),
     received: friends.filter((item) => item.status === 'PENDING' && item.direction === 'received'),
     accepted: friends.filter((item) => item.status === 'ACCEPTED'),
     sent: friends.filter((item) => item.status === 'PENDING' && item.direction === 'sent'),
-    error:
-      friendsQuery.error?.message ??
-      requestMutation.error?.message ??
-      acceptMutation.error?.message ??
-      rejectMutation.error?.message,
-    isLoading:
-      friendsQuery.isLoading ||
-      requestMutation.isPending ||
-      acceptMutation.isPending ||
-      rejectMutation.isPending,
-    message: requestMutation.isSuccess
-      ? 'Solicitacao enviada.'
-      : acceptMutation.isSuccess
-        ? 'Amizade aceita.'
-        : rejectMutation.isSuccess
-          ? 'Pedido recusado.'
-          : undefined,
+    isLoading: friendsQuery.isLoading,
   }
 }

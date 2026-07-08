@@ -1,12 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import type { AppNotification, NotificationsResponse } from '../@types/OndeHoje'
+import type { AppNotification } from '../@types/OndeHoje'
 import { API_BASE_URL } from '../api/api'
 import { listNotifications, markAllNotificationsRead, markNotificationRead } from '../api/ondeHoje'
 import { useUserStore } from '../stores/userStore'
 
 const NOTIFICATIONS_KEY = ['notifications'] as const
+const PAGE_SIZE = 5
 
 // Queries that should refresh when a realtime notification lands, so the rest
 // of the UI (friends list, my groups, pending requests) stays in sync.
@@ -19,13 +20,16 @@ export function useNotifications() {
   // The event bus re-emits each event once from Redis, so we drop duplicates by id.
   const seenEventIds = useRef<Set<string>>(new Set())
 
-  const notificationsQuery = useQuery({
+  const notificationsQuery = useInfiniteQuery({
     enabled: Boolean(user),
     queryKey: NOTIFICATIONS_KEY,
-    queryFn: listNotifications,
-    staleTime: 15_000,
+    queryFn: ({ pageParam }) => listNotifications({ limit: PAGE_SIZE, offset: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.hasMore ? allPages.length * PAGE_SIZE : undefined,
+    staleTime: 10_000,
     // Fallback polling in case the SSE stream drops without notice.
-    refetchInterval: 60_000,
+    refetchInterval: 30_000,
   })
 
   const markReadMutation = useMutation({
@@ -85,14 +89,30 @@ export function useNotifications() {
     }
   }, [accessToken, queryClient, user])
 
-  const data: NotificationsResponse = notificationsQuery.data ?? { unreadCount: 0, notifications: [] }
+  const pages = notificationsQuery.data?.pages ?? []
+  const unreadCount = pages[0]?.unreadCount ?? 0
+
+  // Offset pagination can overlap when new items arrive, so dedupe by id.
+  const seenIds = new Set<string>()
+  const notifications = pages
+    .flatMap((page) => page.notifications)
+    .filter((notification) => {
+      if (seenIds.has(notification.id)) {
+        return false
+      }
+
+      seenIds.add(notification.id)
+      return true
+    })
 
   return {
-    notifications: data.notifications,
-    unreadCount: data.unreadCount,
+    notifications,
+    unreadCount,
     isLoading: notificationsQuery.isLoading,
+    hasMore: Boolean(notificationsQuery.hasNextPage),
+    isLoadingMore: notificationsQuery.isFetchingNextPage,
+    loadMore: () => notificationsQuery.fetchNextPage(),
     markRead: (id: string) => markReadMutation.mutate(id),
     markAllRead: () => markAllReadMutation.mutate(),
-    refetch: () => queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY }),
   }
 }

@@ -1,7 +1,6 @@
 import {
   BarChart3,
   Clock3,
-  LogIn,
   LogOut,
   MapPinned,
   MessagesSquare,
@@ -99,7 +98,7 @@ export function AppMenu({ isOpen, onClose, user }: AppMenuProps) {
           ))}
         </nav>
 
-        {user ? (
+        {user && (
           <Button
             className="mt-2"
             type="button"
@@ -112,15 +111,6 @@ export function AppMenu({ isOpen, onClose, user }: AppMenuProps) {
             <LogOut size={18} />
             Sair da conta
           </Button>
-        ) : (
-          <Link
-            className="mt-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-teal px-4 text-sm font-semibold text-on-teal transition hover:bg-teal-dark"
-            to="/login"
-            onClick={onClose}
-          >
-            <LogIn size={18} />
-            Entrar
-          </Link>
         )}
       </aside>
     </div>

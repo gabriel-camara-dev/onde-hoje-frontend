@@ -76,6 +76,14 @@ export type NotificationType =
   | 'GROUP_MEMBER_ACCEPTED'
   | 'FRIEND_REQUEST'
   | 'FRIEND_ACCEPTED'
+  | 'PLACE_VOTE'
+
+export type NotificationVoter = {
+  publicId: string
+  name: string
+  username: string
+  avatarUrl?: string | null
+}
 
 export type AppNotification = {
   id: string
@@ -85,6 +93,10 @@ export type AppNotification = {
   data?: {
     groupPublicId?: string
     groupName?: string
+    placePublicId?: string
+    placeName?: string
+    count?: number
+    voters?: NotificationVoter[]
   } | null
   read: boolean
   createdAt: string
@@ -99,6 +111,7 @@ export type AppNotification = {
 export type NotificationsResponse = {
   unreadCount: number
   notifications: AppNotification[]
+  hasMore: boolean
 }
 
 export type VoteHistoryItem = {
