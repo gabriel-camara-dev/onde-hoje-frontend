@@ -285,7 +285,13 @@ export function useHome() {
   }
 
   function voteExisting(form: FormData) {
-    if (!selectedPlaceForDay || !requireAuth()) {
+    if (!selectedPlaceForDay) {
+      return
+    }
+
+    // Close the place dialog so the "create account" modal isn't hidden behind it.
+    if (!requireAuth()) {
+      closeSelectedPlace()
       return
     }
 
@@ -308,7 +314,12 @@ export function useHome() {
   }
 
   function voteDraft(form: FormData) {
-    if (!draftPlace || !requireAuth()) {
+    if (!draftPlace) {
+      return
+    }
+
+    if (!requireAuth()) {
+      closeSelectedPlace()
       return
     }
 
@@ -400,20 +411,14 @@ export function useHome() {
     setSelectedPlace(undefined)
   }
 
+  // Anyone (even logged out) can open a place and see its votes; the account
+  // modal only shows when they actually try to vote.
   function selectPlace(place: MapPlace) {
-    if (!requireAuth()) {
-      return
-    }
-
     setDraftPlace(undefined)
     setSelectedPlace(place)
   }
 
   function selectDraft(place: GooglePlaceDraft) {
-    if (!requireAuth()) {
-      return
-    }
-
     setSelectedPlace(undefined)
     setDraftPlace(place)
   }
