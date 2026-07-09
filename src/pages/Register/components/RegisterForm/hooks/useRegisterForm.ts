@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import { registerUser } from '../../../../../api/ondeHoje'
+import { markDeviceHasAccount } from '../../../../../lib/deviceAccount'
 
 const schema = z
   .object({
@@ -42,6 +43,7 @@ export function useRegisterForm() {
   const registerMutation = useMutation({
     mutationFn: registerUser,
     onSuccess: (_data, variables) => {
+      markDeviceHasAccount()
       reset()
 
       const loginParams = new URLSearchParams({ justRegistered: '1', email: variables.email })

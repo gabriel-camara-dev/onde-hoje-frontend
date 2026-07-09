@@ -88,6 +88,9 @@ export function useHome() {
       to: undefined,
     }))
 
+    // Keep the ?vote= params in the URL while the dialog is open so that, if the
+    // session is expired and voting 401s, the login redirect's returnTo still
+    // carries the intent. They're cleared when the dialog closes.
     getMapPlace(voteLinkPlaceId, { day })
       .then((place) => {
         if (place) {
@@ -96,13 +99,6 @@ export function useHome() {
       })
       .catch(() => {
         toast.error('Não foi possível abrir esse lugar.')
-      })
-      .finally(() => {
-        const nextParams = new URLSearchParams(searchParams)
-        nextParams.delete('vote')
-        nextParams.delete('city')
-        nextParams.delete('day')
-        setSearchParams(nextParams, { replace: true })
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voteLinkPlaceId])
@@ -413,6 +409,15 @@ export function useHome() {
   function closeSelectedPlace() {
     setDraftPlace(undefined)
     setSelectedPlace(undefined)
+
+    // Drop any leftover vote-link params now that the dialog is closing.
+    if (searchParams.has('vote') || searchParams.has('city') || searchParams.has('day')) {
+      const nextParams = new URLSearchParams(searchParams)
+      nextParams.delete('vote')
+      nextParams.delete('city')
+      nextParams.delete('day')
+      setSearchParams(nextParams, { replace: true })
+    }
   }
 
   // Anyone (even logged out) can open a place and see its votes; the account

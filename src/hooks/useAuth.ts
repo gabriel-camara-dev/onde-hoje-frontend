@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { authenticate } from '../api/ondeHoje'
+import { markDeviceHasAccount } from '../lib/deviceAccount'
 import { useUserStore } from '../stores/userStore'
 
 interface AuthData {
@@ -18,6 +19,7 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: (data: AuthData) => authenticate(data),
     onSuccess: ({ token, user }) => {
+      markDeviceHasAccount()
       setUser({ accessToken: token, user })
       navigate(returnTo && returnTo.startsWith('/') ? returnTo : '/')
     },

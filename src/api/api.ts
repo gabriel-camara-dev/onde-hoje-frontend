@@ -50,6 +50,27 @@ const onRequest = (config: InternalAxiosRequestConfig) => {
   return config
 }
 
+let redirectingToLogin = false
+
+// Session expired mid-action: send the user to login keeping the current URL as
+// returnTo, so after signing in they land back on the invite/vote/group link and
+// it completes. A hard redirect is fine here (we're leaving the session anyway).
+function redirectToLoginPreservingIntent() {
+  if (redirectingToLogin || typeof window === 'undefined') {
+    return
+  }
+
+  const { pathname, search } = window.location
+
+  if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
+    return
+  }
+
+  redirectingToLogin = true
+  const returnTo = encodeURIComponent(`${pathname}${search}`)
+  window.location.assign(`/login?returnTo=${returnTo}`)
+}
+
 const onResponseError = (options: { logoutOnUnauthorized?: boolean } = {}) => (error: unknown) => {
   if (axios.isAxiosError(error) && error.message === 'Network Error') {
     return Promise.reject(
@@ -64,6 +85,7 @@ const onResponseError = (options: { logoutOnUnauthorized?: boolean } = {}) => (e
 
     if (status === 401 && options.logoutOnUnauthorized) {
       useUserStore.getState().logout()
+      redirectToLoginPreservingIntent()
     }
 
     const data = error.response?.data

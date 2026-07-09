@@ -1,6 +1,7 @@
-import { Menu, UserPlus } from 'lucide-react'
+import { LogIn, Menu, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { deviceHasAccount } from '../../lib/deviceAccount'
 import { useUserStore } from '../../stores/userStore'
 import { AppMenu } from '../AppMenu'
 import { Avatar } from '../Avatar'
@@ -10,6 +11,8 @@ import { ThemeToggle } from '../ThemeToggle'
 export default function Header() {
   const user = useUserStore((state) => state.user)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  // Returning devices (already had an account here) see "Entrar"; new ones "Registrar".
+  const returningDevice = deviceHasAccount()
 
   return (
     <>
@@ -30,10 +33,10 @@ export default function Header() {
           {!user && (
             <Link
               className="inline-flex min-h-10 items-center gap-2 rounded-md bg-teal px-3 py-1 text-sm font-semibold text-on-teal transition hover:bg-teal-dark"
-              to="/register"
+              to={returningDevice ? '/login' : '/register'}
             >
-              <UserPlus size={18} />
-              Entrar
+              {returningDevice ? <LogIn size={18} /> : <UserPlus size={18} />}
+              {returningDevice ? 'Entrar' : 'Registrar'}
             </Link>
           )}
           {user ? (
