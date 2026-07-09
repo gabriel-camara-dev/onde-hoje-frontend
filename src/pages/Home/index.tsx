@@ -17,6 +17,7 @@ export default function Home() {
           currentUserPublicId={home.currentUserPublicId}
           draftPlace={home.draftPlace}
           groups={home.activeGroups}
+          canDecline={home.canDecline}
           hasUserVote={home.hasUserVote}
           isPending={home.isVotingPending}
           maxDay={home.maxDay}

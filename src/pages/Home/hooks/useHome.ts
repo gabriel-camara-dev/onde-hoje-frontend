@@ -95,7 +95,7 @@ export function useHome() {
         }
       })
       .catch(() => {
-        toast.error('Nao foi possivel abrir esse lugar.')
+        toast.error('Não foi possivel abrir esse lugar.')
       })
       .finally(() => {
         const nextParams = new URLSearchParams(searchParams)
@@ -111,22 +111,26 @@ export function useHome() {
     () => (myGroupsQuery.data ?? []).filter((group) => group.myStatus === 'ACTIVE'),
     [myGroupsQuery.data]
   )
-  // Day-accurate card for the open dialog: the map markers are aggregated over
-  // the whole week in week view, so fetch this exact place for the selected day
-  // to get the real vote count/voters (drives the "nao vou" availability too).
+  // Per-day/scope fetch of the open place. Used ONLY to decide whether "nao vou"
+  // is allowed for the selected day (it needs a going vote on that exact day),
+  // not for the displayed voter list.
   const selectedPlaceDetailQuery = useQuery({
     enabled: Boolean(selectedPlace && !draftPlace),
     queryKey: ['map-place', selectedPlace?.id, filters.day, filters.groupPublicId],
     queryFn: () => getMapPlace(selectedPlace!.id, { day: filters.day, groupPublicId: filters.groupPublicId }),
   })
+  // Displayed card = the same aggregated data as the map marker (week + my groups),
+  // so "Quem votou aqui" lists everyone the marker counts. Falls back to the
+  // per-place fetch for places opened via a vote link (not on the current map).
   const selectedPlaceForDay = selectedPlace
-    ? (selectedPlaceDetailQuery.data ??
-      places.find((place) => place.id === selectedPlace.id) ?? {
+    ? (places.find((place) => place.id === selectedPlace.id) ??
+      selectedPlaceDetailQuery.data ?? {
         ...selectedPlace,
         voteCount: 0,
         voters: [],
       })
     : undefined
+  const canDeclineSelectedPlace = (selectedPlaceDetailQuery.data?.voteCount ?? 0) > 0
 
   const voteMutation = useMutation({
     mutationFn: async (input: {
@@ -402,7 +406,7 @@ export function useHome() {
       await navigator.clipboard.writeText(url.toString())
       toast.success('Link para votar copiado.')
     } catch {
-      toast.error('Nao foi possivel copiar o link agora.')
+      toast.error('Não foi possivel copiar o link agora.')
     }
   }
 
@@ -456,6 +460,7 @@ export function useHome() {
     selectedPlaceForDay,
     isDialogOpen: Boolean(draftPlace || selectedPlace),
     hasUserVote: selectedPlaceHasUserVote,
+    canDecline: canDeclineSelectedPlace,
     isVotingPending,
     requestedFriendUsernames,
     requestFriendPending: requestFriendshipMutation.isPending,

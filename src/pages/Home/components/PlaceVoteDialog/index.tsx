@@ -6,6 +6,7 @@ import { VotePanel } from '../VotePanel'
 import { VotersList } from '../VotersList'
 
 type PlaceVoteDialogProps = {
+  canDecline?: boolean
   cancelVotePending?: boolean
   currentUserPublicId?: string
   draftPlace?: GooglePlaceDraft
@@ -28,6 +29,7 @@ type PlaceVoteDialogProps = {
 }
 
 export function PlaceVoteDialog({
+  canDecline,
   currentUserPublicId,
   draftPlace,
   groups,
@@ -87,6 +89,7 @@ export function PlaceVoteDialog({
           </div>
 
           <VotePanel
+            canDecline={canDecline}
             groups={groups}
             hasUserVote={hasUserVote}
             isFreeMapPoint={isFreeMapPoint}

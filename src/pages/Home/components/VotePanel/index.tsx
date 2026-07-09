@@ -8,6 +8,7 @@ import { voteTypeOptions } from '../../homeVoteTypeOptions'
 
 type VotePanelProps = {
   canChooseVoteType?: boolean
+  canDecline?: boolean
   groups: Array<{ id: string; name: string }>
   hasUserVote?: boolean
   isFreeMapPoint?: boolean
@@ -27,6 +28,7 @@ type VotePanelProps = {
 
 export function VotePanel({
   canChooseVoteType = true,
+  canDecline: canDeclineProp,
   groups,
   hasUserVote,
   isFreeMapPoint,
@@ -44,8 +46,10 @@ export function VotePanel({
   voteCount,
 }: VotePanelProps) {
   const [going, setGoing] = useState(true)
-  // "Nao vou" only makes sense when the place already has votes (someone proposed it).
-  const canDecline = !isNewPlace && (voteCount ?? 0) > 0
+  // "Nao vou" only makes sense when the place already has a going vote for the
+  // selected day. useHome passes a day-accurate `canDecline`; fall back to the
+  // displayed (possibly week-aggregated) count when it isn't provided.
+  const canDecline = !isNewPlace && (canDeclineProp ?? (voteCount ?? 0) > 0)
   const effectiveGoing = canDecline ? going : true
   const submitLabel = !effectiveGoing
     ? 'Marcar que não vou'
@@ -180,7 +184,7 @@ export function VotePanel({
             </fieldset>
           )}
           <label className="grid gap-1.5 text-xs font-medium text-muted">
-            Nota opcional
+            Nota (opcional)
             <textarea
               className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
               maxLength={240}
@@ -198,7 +202,7 @@ export function VotePanel({
             <span>
               Permitir que vejam que fui eu que votei
               <span className="mt-0.5 block text-xs font-normal text-muted">
-                Se desmarcar, seu voto continua contando, mas seu nome nao aparece na lista.
+                Se desmarcar, seu voto continua contando, mas seu nome não aparece na lista.
               </span>
             </span>
           </label>
