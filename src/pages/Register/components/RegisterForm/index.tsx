@@ -11,7 +11,7 @@ export function RegisterForm() {
     <>
       <StatusBanner
         error={errors.root?.message}
-        message="Depois do cadastro, voce sera levado para o login. Confirme o email em ate 5 minutos para manter a conta ativa."
+        message="Depois do cadastro, você será levado para o login. Confirme o email em até 5 minutos para manter a conta ativa."
       />
 
       <Panel className="rounded-2xl p-5">

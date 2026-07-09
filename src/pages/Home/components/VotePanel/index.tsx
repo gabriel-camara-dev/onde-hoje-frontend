@@ -46,7 +46,7 @@ export function VotePanel({
   voteCount,
 }: VotePanelProps) {
   const [going, setGoing] = useState(true)
-  // "Nao vou" only makes sense when the place already has a going vote for the
+  // "Não vou" only makes sense when the place already has a going vote for the
   // selected day. useHome passes a day-accurate `canDecline`; fall back to the
   // displayed (possibly week-aggregated) count when it isn't provided.
   const canDecline = !isNewPlace && (canDeclineProp ?? (voteCount ?? 0) > 0)
@@ -74,7 +74,7 @@ export function VotePanel({
       <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-3 text-ink shadow-panel backdrop-blur">
         <p className="mb-2 text-xs font-semibold uppercase text-teal">Seu voto</p>
         <p className="text-sm text-ink">
-          Voce ja votou aqui para <strong>{formatDisplayDate(selectedDay)}</strong>.
+          Você já votou aqui para <strong>{formatDisplayDate(selectedDay)}</strong>.
         </p>
         {voteCount !== undefined && (
           <span className="mt-3 inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-semibold text-teal">
@@ -149,14 +149,14 @@ export function VotePanel({
               value={selectedDay}
               onChange={(event) => onDayChange(event.currentTarget.value)}
             />
-            <Input label="Horario (opcional)" name="voteTime" type="time" />
+            <Input label="Horário (opcional)" name="voteTime" type="time" />
           </div>
           <Select
             defaultValue={selectedGroupPublicId ?? ''}
             label="Grupo"
             name="groupPublicId"
             options={[
-              { label: 'Publico', value: '' },
+              { label: 'Público', value: '' },
               ...groups.map((group) => ({ label: group.name, value: group.id })),
             ]}
           />
@@ -228,13 +228,13 @@ export function VotePanel({
                   onClick={() => setGoing(false)}
                 >
                   <Ban size={16} />
-                  Nao vou
+                  Não vou
                 </button>
               </div>
               {!going && (
                 <p className="text-xs font-medium text-muted">
                   Seu &quot;não vou&quot; não conta no limite semanal nem coloca o lugar no mapa, só
-                  avisa o grupo que voce não vai.
+                  avisa o grupo que você não vai.
                 </p>
               )}
             </>

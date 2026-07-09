@@ -10,7 +10,7 @@ export default function ProfilePage() {
       <section className="grid min-h-[calc(100vh-140px)] place-items-center px-4">
         <Panel className="w-full max-w-xl text-center">
           <h1 className="text-2xl font-semibold">Perfil</h1>
-          <p className="mt-2 text-sm text-muted">Entre para ver e editar suas informacoes.</p>
+          <p className="mt-2 text-sm text-muted">Entre para ver e editar suas informações.</p>
         </Panel>
       </section>
     )

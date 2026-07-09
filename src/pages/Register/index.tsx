@@ -10,20 +10,20 @@ export function Register() {
   return (
     <AuthShell
       title="Crie sua conta"
-      description="Cadastre-se para votar, participar de grupos e salvar seu historico no OndeHoje."
+      description="Cadastre-se para votar, participar de grupos e salvar seu histórico no OndeHoje."
       actions={
         <>
           <Link
             className="inline-flex min-h-11 items-center rounded-xl bg-teal px-4 py-2 text-sm font-semibold text-on-teal transition hover:bg-teal-dark"
             to={loginPath}
           >
-            Ja tenho conta
+            Já tenho conta
           </Link>
           <Link
             className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-teal-soft"
             to="/"
           >
-            Explorar mapa publico
+            Explorar mapa público
           </Link>
         </>
       }

@@ -16,7 +16,7 @@ export function useOAuthCallback() {
     const encodedUser = params.get('user')
 
     if (!token || !encodedUser) {
-      setError('Nao foi possivel concluir o login com Google.')
+      setError('Não foi possível concluir o login com Google.')
       return
     }
 

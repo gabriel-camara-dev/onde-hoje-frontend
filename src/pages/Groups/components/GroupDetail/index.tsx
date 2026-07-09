@@ -75,11 +75,11 @@ export function GroupDetail({
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="mb-2 text-xs font-semibold uppercase text-teal">
-              {group.privacy === 'PRIVATE' ? 'Privado' : 'Publico'}
+              {group.privacy === 'PRIVATE' ? 'Privado' : 'Público'}
               {'myRole' in group ? ` - ${group.myRole}` : ''}
             </p>
             <h2 className="text-2xl font-semibold">{group.name}</h2>
-            <p className="mt-2 text-sm text-muted">{group.description || 'Grupo sem descricao.'}</p>
+            <p className="mt-2 text-sm text-muted">{group.description || 'Grupo sem descrição.'}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button type="button" variant="secondary" onClick={() => setIsInviteModalOpen(true)}>
                 <UserPlus size={17} />
@@ -106,7 +106,7 @@ export function GroupDetail({
         {isInvited && (onAcceptInvite || onDeclineInvite) && (
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-teal/40 bg-teal-soft p-3">
             <p className="text-sm font-semibold text-ink">
-              Voce foi convidado para este grupo. Aceite para participar e votar junto.
+              Você foi convidado para este grupo. Aceite para participar e votar junto.
             </p>
             <div className="flex gap-2">
               {onAcceptInvite && (
@@ -128,7 +128,7 @@ export function GroupDetail({
         {(onJoin || onLoginToJoin) && !isMember && !isInvited && group.privacy === 'PUBLIC' && (
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-muted p-3">
             <p className="text-sm text-muted">
-              Voce pode entrar neste grupo e votar junto com as pessoas que ja participam dele.
+              Você pode entrar neste grupo e votar junto com as pessoas que já participam dele.
             </p>
             <Button type="button" onClick={onJoin ?? onLoginToJoin} variant="secondary">
               <UserPlus size={17} />
@@ -176,8 +176,8 @@ export function GroupDetail({
             <p className="text-sm text-muted">
               {confirmAction.type === 'leave'
                 ? canManage
-                  ? 'Voce e o dono deste grupo. Ao sair, o cargo de dono sera transferido para outro membro do grupo. Se nao houver outro membro ativo, o grupo sera removido.'
-                  : 'Voce deixara de participar deste grupo e nao podera mais votar nele.'
+                  ? 'Você e o dono deste grupo. Ao sair, o cargo de dono será transferido para outro membro do grupo. Se não houver outro membro ativo, o grupo será removido.'
+                  : 'Você deixara de participar deste grupo e não podera mais votar nele.'
                 : `Tem certeza que deseja remover ${confirmAction.name} deste grupo?`}
             </p>
             <div className="flex justify-end gap-2">
@@ -216,7 +216,7 @@ export function GroupDetail({
                 </Button>
               </div>
               <p className="text-xs text-muted">
-                O link leva a pessoa para este grupo. Se ela nao estiver logada, entra primeiro e depois volta para solicitar entrada.
+                O link leva a pessoa para este grupo. Se ela não estiver logada, entra primeiro e depois volta para solicitar entrada.
               </p>
             </section>
 
@@ -249,8 +249,8 @@ export function GroupDetail({
           <div className="grid max-h-[45vh] gap-1.5 overflow-y-auto pr-1">
             {inviteFriends.length === 0 ? (
               <EmptyState
-                title="Nenhum amigo disponivel"
-                description="Amigos que ainda nao estao no grupo aparecem aqui."
+                title="Nenhum amigo disponível"
+                description="Amigos que ainda não estão no grupo aparecem aqui."
               />
             ) : (
               inviteFriends.map((friendship) => {

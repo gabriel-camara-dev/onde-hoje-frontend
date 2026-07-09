@@ -14,7 +14,7 @@ export function FriendLinkModal({ username, link, onClose, onCopy }: FriendLinkM
     <Modal title="Meu link de amizade" onClose={onClose}>
       <div className="grid gap-3">
         <p className="text-sm text-muted">
-          Envie este link para alguem abrir seu perfil de amizade e mandar um pedido para voce.
+          Envie este link para alguém abrir seu perfil de amizade e mandar um pedido para você.
         </p>
         <div className="grid gap-2 rounded-lg border border-line bg-surface-muted p-3">
           <span className="text-xs font-semibold uppercase text-muted">Seu username</span>

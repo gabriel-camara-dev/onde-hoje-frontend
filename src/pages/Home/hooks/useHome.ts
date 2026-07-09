@@ -95,7 +95,7 @@ export function useHome() {
         }
       })
       .catch(() => {
-        toast.error('Não foi possivel abrir esse lugar.')
+        toast.error('Não foi possível abrir esse lugar.')
       })
       .finally(() => {
         const nextParams = new URLSearchParams(searchParams)
@@ -111,7 +111,7 @@ export function useHome() {
     () => (myGroupsQuery.data ?? []).filter((group) => group.myStatus === 'ACTIVE'),
     [myGroupsQuery.data]
   )
-  // Per-day/scope fetch of the open place. Used ONLY to decide whether "nao vou"
+  // Per-day/scope fetch of the open place. Used ONLY to decide whether "não vou"
   // is allowed for the selected day (it needs a going vote on that exact day),
   // not for the displayed voter list.
   const selectedPlaceDetailQuery = useQuery({
@@ -273,7 +273,7 @@ export function useHome() {
     }
 
     if (!isAllowedVoteDay(day, today, maxVoteDay)) {
-      toast.error('Escolha uma data entre hoje e ate 1 mes no futuro.')
+      toast.error('Escolha uma data entre hoje e até 1 mes no futuro.')
       return null
     }
 
@@ -376,7 +376,7 @@ export function useHome() {
     }
 
     if (!isAllowedVoteDay(day, today, maxVoteDay)) {
-      toast.error('Escolha uma data entre hoje e ate 1 mes no futuro.')
+      toast.error('Escolha uma data entre hoje e até 1 mes no futuro.')
       return
     }
 
@@ -406,7 +406,7 @@ export function useHome() {
       await navigator.clipboard.writeText(url.toString())
       toast.success('Link para votar copiado.')
     } catch {
-      toast.error('Não foi possivel copiar o link agora.')
+      toast.error('Não foi possível copiar o link agora.')
     }
   }
 

@@ -75,9 +75,9 @@ export function FriendColumn({
 
               {removeAction && item.friend.username && (
                 <button
-                  aria-label={removeKind === 'sent' ? 'Cancelar solicitacao' : 'Excluir amigo'}
+                  aria-label={removeKind === 'sent' ? 'Cancelar solicitação' : 'Excluir amigo'}
                   className={`${iconButtonBase} bg-red-700 text-white hover:bg-red-800`}
-                  title={removeKind === 'sent' ? 'Cancelar solicitacao' : 'Excluir amigo'}
+                  title={removeKind === 'sent' ? 'Cancelar solicitação' : 'Excluir amigo'}
                   type="button"
                   onClick={() =>
                     setConfirmRemove({ username: item.friend.username!, name: item.friend.name })
@@ -93,19 +93,19 @@ export function FriendColumn({
 
       {confirmRemove && (
         <Modal
-          title={removeKind === 'sent' ? 'Cancelar solicitacao' : 'Excluir amigo'}
+          title={removeKind === 'sent' ? 'Cancelar solicitação' : 'Excluir amigo'}
           onClose={() => setConfirmRemove(null)}
         >
           <p className="text-sm text-muted">
             {removeKind === 'sent' ? (
               <>
-                Cancelar a solicitacao de amizade enviada para{' '}
+                Cancelar a solicitação de amizade enviada para{' '}
                 <strong className="text-ink">{confirmRemove.name}</strong>?
               </>
             ) : (
               <>
                 Tem certeza que deseja excluir{' '}
-                <strong className="text-ink">{confirmRemove.name}</strong> da sua lista de amigos? Voces
+                <strong className="text-ink">{confirmRemove.name}</strong> da sua lista de amigos? Vocês
                 deixarao de ser amigos.
               </>
             )}
@@ -123,7 +123,7 @@ export function FriendColumn({
               }}
             >
               <Trash2 size={16} />
-              {removeKind === 'sent' ? 'Cancelar solicitacao' : 'Excluir'}
+              {removeKind === 'sent' ? 'Cancelar solicitação' : 'Excluir'}
             </Button>
           </div>
         </Modal>

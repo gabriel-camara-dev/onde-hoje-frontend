@@ -32,7 +32,7 @@ export function useFriends() {
     mutationFn: requestFriendship,
     onSuccess: () => {
       invalidateFriends()
-      toast.success('Solicitacao de amizade enviada.')
+      toast.success('Solicitação de amizade enviada.')
     },
     onError: (error: Error) => toast.error(error.message),
   })
@@ -100,7 +100,7 @@ export function useFriends() {
       await navigator.clipboard.writeText(friendshipLink)
       toast.success('Link de amizade copiado.')
     } catch {
-      toast.error('Nao foi possivel copiar o link agora.')
+      toast.error('Não foi possível copiar o link agora.')
     }
   }
 

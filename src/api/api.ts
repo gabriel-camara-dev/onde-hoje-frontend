@@ -54,7 +54,7 @@ const onResponseError = (options: { logoutOnUnauthorized?: boolean } = {}) => (e
   if (axios.isAxiosError(error) && error.message === 'Network Error') {
     return Promise.reject(
       new Error(
-        `Nao consegui conectar na API em ${API_BASE_URL}. Verifique se o backend esta rodando.`
+        `Não consegui conectar na API em ${API_BASE_URL}. Verifique se o backend esta rodando.`
       )
     )
   }

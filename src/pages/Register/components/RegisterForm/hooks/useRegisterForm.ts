@@ -11,10 +11,10 @@ const schema = z
     username: z
       .string()
       .trim()
-      .min(3, 'O username deve ter no minimo 3 caracteres')
-      .regex(/^[a-zA-Z0-9._]+$/, 'Use apenas letras, numeros, ponto ou underline'),
-    email: z.string().trim().email('Informe um email valido'),
-    password: z.string().min(6, 'A senha deve ter no minimo 6 caracteres'),
+      .min(3, 'O username deve ter no mínimo 3 caracteres')
+      .regex(/^[a-zA-Z0-9._]+$/, 'Use apenas letras, números, ponto ou underline'),
+    email: z.string().trim().email('Informe um email válido'),
+    password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres'),
     confirmPassword: z.string().min(6, 'Confirme sua senha'),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -54,7 +54,7 @@ export function useRegisterForm() {
     },
     onError: (error) => {
       setError('root', {
-        message: error instanceof Error ? error.message : 'Nao foi possivel criar sua conta agora.',
+        message: error instanceof Error ? error.message : 'Não foi possível criar sua conta agora.',
       })
     },
   })

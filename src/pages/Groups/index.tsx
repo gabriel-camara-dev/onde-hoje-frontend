@@ -134,7 +134,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
       setModal(null)
       refreshGroups()
       toast.success(
-        membership?.status === 'PENDING' ? 'Entrada solicitada.' : 'Voce entrou no grupo.',
+        membership?.status === 'PENDING' ? 'Entrada solicitada.' : 'Você entrou no grupo.',
       )
     },
     onError: (error) => {
@@ -174,7 +174,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
         setSelectedGroupId(undefined)
         toast.success('Convite recusado.')
       } else {
-        toast.success('Voce entrou no grupo.')
+        toast.success('Você entrou no grupo.')
       }
     },
     onError: (error) => {
@@ -197,7 +197,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     onSuccess: (_data, groupId) => {
       setSelectedGroupId(undefined)
       refreshGroups()
-      toast.success('Voce saiu do grupo.')
+      toast.success('Você saiu do grupo.')
 
       if (groupPublicId === groupId) {
         navigate('/groups', { replace: true })
@@ -237,7 +237,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
     const password = joinNeedsPassword ? String(form.get('password') || '') || undefined : undefined
 
     if (!isGroupPublicId(groupPublicId)) {
-      toast.error('Informe um ID de grupo valido.')
+      toast.error('Informe um ID de grupo válido.')
       return
     }
 
@@ -347,8 +347,8 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
                 {user
                   ? 'Entre em grupos, veja membros e gerencie convites.'
                   : groupsCity
-                    ? `Grupos publicos em ${groupsCity} para acompanhar onde a galera vai hoje.`
-                    : 'Grupos publicos principais para acompanhar onde a galera vai hoje.'}
+                    ? `Grupos públicos em ${groupsCity} para acompanhar onde a galera vai hoje.`
+                    : 'Grupos públicos principais para acompanhar onde a galera vai hoje.'}
               </p>
             </div>
             {user && (
@@ -372,7 +372,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
           {user && (
             <div className="mb-4 grid grid-cols-2 rounded-lg border border-line bg-surface-muted p-1">
               <TabButton active={activeTab === 'PUBLIC'} onClick={() => setActiveTab('PUBLIC')}>
-                Publicos
+                Públicos
               </TabButton>
               <TabButton active={activeTab === 'PRIVATE'} onClick={() => setActiveTab('PRIVATE')}>
                 Privados
@@ -406,11 +406,11 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
           <div className="grid gap-3">
             {filteredGroups.length === 0 ? (
               <EmptyState
-                title={activeTab === 'PRIVATE' ? 'Nenhum grupo privado' : 'Nenhum grupo publico'}
+                title={activeTab === 'PRIVATE' ? 'Nenhum grupo privado' : 'Nenhum grupo público'}
                 description={
                   user
                     ? 'Crie um grupo ou entre usando nome e senha.'
-                    : 'Quando houver grupos publicos nessa cidade, eles aparecem aqui.'
+                    : 'Quando houver grupos públicos nessa cidade, eles aparecem aqui.'
                 }
               />
             ) : (
@@ -494,7 +494,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
               description={
                 user
                   ? 'Selecione um grupo para ver membros, aceitar pedidos ou convidar amigos.'
-                  : 'Selecione um grupo publico para ver seus membros.'
+                  : 'Selecione um grupo público para ver seus membros.'
               }
             />
           </Panel>
@@ -506,7 +506,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
           <form className="grid gap-3" onSubmit={submitCreate}>
             <Input label="Nome" maxLength={80} minLength={2} name="name" required />
             <label className="grid gap-1.5 text-xs font-medium text-muted">
-              Descricao
+              Descrição
               <textarea
                 className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
                 maxLength={280}
@@ -518,7 +518,7 @@ export default function GroupsPage({ city = '' }: GroupsPageProps) {
               label="Privacidade"
               name="privacy"
               options={[
-                { label: 'Publico', value: 'PUBLIC' },
+                { label: 'Público', value: 'PUBLIC' },
                 { label: 'Privado', value: 'PRIVATE' },
               ]}
               required

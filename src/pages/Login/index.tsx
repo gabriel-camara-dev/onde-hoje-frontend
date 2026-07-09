@@ -12,7 +12,7 @@ export function Login() {
   return (
     <AuthShell
       title="Entre na sua conta"
-      description="Acesse sua conta para votar, participar de grupos e acompanhar seu historico."
+      description="Acesse sua conta para votar, participar de grupos e acompanhar seu histórico."
       actions={
         <>
           <Link
@@ -25,17 +25,17 @@ export function Login() {
             className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-teal-soft"
             to="/"
           >
-            Explorar mapa publico
+            Explorar mapa público
           </Link>
         </>
       }
     >
       <StatusBanner
         error={
-          emailConfirmed === 'invalid' ? 'Link de confirmacao invalido ou expirado.' : undefined
+          emailConfirmed === 'invalid' ? 'Link de confirmação inválido ou expirado.' : undefined
         }
         message={
-          emailConfirmed === 'success' ? 'Email confirmado. Agora voce pode entrar.' : undefined
+          emailConfirmed === 'success' ? 'Email confirmado. Agora você pode entrar.' : undefined
         }
       />
 
@@ -52,7 +52,7 @@ export function Login() {
         </div>
         <LoginForm />
         <p className="mt-4 text-center text-sm text-muted">
-          Ainda nao tem conta?{' '}
+          Ainda não tem conta?{' '}
           <Link className="font-semibold text-teal hover:text-teal-dark" to={registerPath}>
             Criar conta
           </Link>

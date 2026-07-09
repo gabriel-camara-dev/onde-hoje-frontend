@@ -81,7 +81,7 @@ export function useGroupDetailState({
       await navigator.clipboard.writeText(group.id)
       toast.success('ID do grupo copiado.')
     } catch {
-      toast.error('Não foi possivel copiar o ID agora.')
+      toast.error('Não foi possível copiar o ID agora.')
     }
   }
 
@@ -94,7 +94,7 @@ export function useGroupDetailState({
       await navigator.clipboard.writeText(inviteUrl)
       toast.success('Link do grupo copiado.')
     } catch {
-      toast.error('Não foi possivel copiar o link agora.')
+      toast.error('Não foi possível copiar o link agora.')
     }
   }
 

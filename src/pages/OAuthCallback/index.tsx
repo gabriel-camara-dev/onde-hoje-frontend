@@ -10,7 +10,7 @@ export function OAuthCallback() {
       <Panel className="w-full max-w-md rounded-lg p-6 text-center">
         <p className="text-xs font-semibold uppercase text-teal">Google OAuth</p>
         <h1 className="mt-2 text-2xl font-semibold">
-          {error ? 'Login nao concluido' : 'Concluindo seu login...'}
+          {error ? 'Login não concluido' : 'Concluindo seu login...'}
         </h1>
         {error && <p className="mt-3 text-sm text-muted">{error}</p>}
         {error && (

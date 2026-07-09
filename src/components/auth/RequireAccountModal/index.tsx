@@ -30,7 +30,7 @@ export function RequireAccountModal({
           to={loginPath}
           onClick={onClose}
         >
-          Ja tenho conta
+          Já tenho conta
         </Link>
       </div>
     </Modal>

@@ -52,7 +52,7 @@ export function VotersList({
                         : 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200'
                     }`}
                   >
-                    {going ? 'vai' : 'nao vai'}
+                    {going ? 'vai' : 'não vai'}
                   </span>
                 </div>
                 <p className="truncate text-xs text-muted">

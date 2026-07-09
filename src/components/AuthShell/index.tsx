@@ -27,12 +27,12 @@ export function AuthShell({ title, description, actions, children }: AuthShellPr
               </div>
 
               <div className="rounded-2xl border border-white/12 bg-white/6 p-4 text-sm leading-6 text-white/84 backdrop-blur-sm">
-                Descubra lugares, vote com seu grupo e acompanhe seu historico em uma unica conta.
+                Descubra lugares, vote com seu grupo e acompanhe seu histórico em uma unica conta.
               </div>
 
               <div className="hidden items-center gap-3 text-sm font-medium text-white/72 lg:flex">
                 <Link className="transition hover:text-white" to="/">
-                  Explorar mapa publico
+                  Explorar mapa público
                 </Link>
                 <span className="h-1 w-1 rounded-full bg-white/35" />
                 <Link className="transition hover:text-white" to="/login">

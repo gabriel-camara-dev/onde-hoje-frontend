@@ -18,13 +18,13 @@ export function HistoryTimeline({ isLoggedIn, history }: HistoryTimelineProps) {
       </div>
       {!isLoggedIn ? (
         <EmptyState
-          title="Entre para ver seu historico"
-          description="Seu historico individual aparece aqui depois que voce estiver logado."
+          title="Entre para ver seu histórico"
+          description="Seu histórico individual aparece aqui depois que você estiver logado."
         />
       ) : history.length === 0 ? (
         <EmptyState
           title="Sem votos neste periodo"
-          description="Quando voce votar em algum lugar, ele aparece nesta linha do tempo."
+          description="Quando você votar em algum lugar, ele aparece nesta linha do tempo."
         />
       ) : (
         <div className="grid gap-4">
@@ -45,7 +45,7 @@ export function HistoryTimeline({ isLoggedIn, history }: HistoryTimelineProps) {
                     </span>
                     <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-teal">
                       <MapPin size={15} />
-                      {vote.group?.name ?? 'Publico'}
+                      {vote.group?.name ?? 'Público'}
                     </span>
                     {vote.note && <p className="mt-2 text-sm text-muted">{vote.note}</p>}
                   </div>

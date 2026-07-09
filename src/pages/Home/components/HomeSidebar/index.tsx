@@ -57,7 +57,7 @@ export function HomeSidebar({
             onClick={() => onWeekViewChange(true)}
           >
             <CalendarDays size={15} />
-            Proximos 7 dias
+            Próximos 7 dias
           </button>
           <button
             className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
@@ -91,7 +91,7 @@ export function HomeSidebar({
           <Metric icon={CalendarDays} label="limite semanal" value={WEEKLY_VOTE_LIMIT} />
         </div>
         <p className="mt-2 text-center text-xs font-medium text-muted">
-          Voce pode votar em ate {WEEKLY_VOTE_LIMIT} lugares por semana ({userVotesThisWeek}/
+          Você pode votar em até {WEEKLY_VOTE_LIMIT} lugares por semana ({userVotesThisWeek}/
           {WEEKLY_VOTE_LIMIT} usados).
         </p>
       </section>
@@ -103,7 +103,7 @@ export function HomeSidebar({
             Mais votados
           </h2>
           <span className="shrink-0 text-xs font-medium text-muted">
-            {isWeekView ? 'Proximos 7 dias' : formatDisplayDate(filters.day)}
+            {isWeekView ? 'Próximos 7 dias' : formatDisplayDate(filters.day)}
           </span>
         </div>
         <div className="grid gap-2">

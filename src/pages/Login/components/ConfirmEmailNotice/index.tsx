@@ -13,7 +13,7 @@ export function ConfirmEmailNotice({ email }: { email: string }) {
             <p className="text-xs font-semibold uppercase tracking-[0.14em]">Confirme seu email</p>
             <h2 className="mt-1 text-base font-semibold">Verifique sua caixa de entrada.</h2>
             <p className="mt-1 text-sm leading-5">
-              Enviamos um link para <strong>{email || 'o email cadastrado'}</strong>. Confirme em ate
+              Enviamos um link para <strong>{email || 'o email cadastrado'}</strong>. Confirme em até
               5 minutos para ativar a conta.
             </p>
           </div>

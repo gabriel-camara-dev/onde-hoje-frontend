@@ -38,7 +38,7 @@ export function RankingPanel({
         {places.length === 0 ? (
           <EmptyState
             title="Ranking vazio"
-            description="Ainda nao ha votos ativos para os filtros escolhidos."
+            description="Ainda não ha votos ativos para os filtros escolhidos."
           />
         ) : (
           places.map((place, index) => (

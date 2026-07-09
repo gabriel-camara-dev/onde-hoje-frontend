@@ -6,7 +6,7 @@ import { useAuth } from '../../../../../hooks/useAuth'
 
 const schema = z.object({
   login: z.string().trim().min(3, 'Informe seu email ou username'),
-  password: z.string().min(6, 'A senha deve ter no minimo 6 caracteres'),
+  password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres'),
 })
 
 type LoginFormData = z.infer<typeof schema>

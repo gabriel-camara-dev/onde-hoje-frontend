@@ -28,13 +28,13 @@ export function HistoryFilters({ range, totalVotes, onSubmit }: HistoryFiltersPr
   return (
     <Panel>
       <Clock3 className="mb-4 text-teal" size={28} />
-      <h1 className="text-2xl font-semibold">Meu historico</h1>
+      <h1 className="text-2xl font-semibold">Meu histórico</h1>
       <p className="mt-2 text-sm text-muted">
-        Consulte seus votos recentes e veja onde voce marcou presença.
+        Consulte seus votos recentes e veja onde você marcou presença.
       </p>
       <form className="mt-5 grid gap-3" onSubmit={submit}>
         <Input label="De" name="from" type="date" defaultValue={range.from} />
-        <Input label="Ate" name="to" type="date" defaultValue={range.to} />
+        <Input label="Até" name="to" type="date" defaultValue={range.to} />
         <Button type="submit">Atualizar periodo</Button>
       </form>
       <div className="mt-5 rounded-lg border border-line p-4">

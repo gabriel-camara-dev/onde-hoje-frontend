@@ -101,9 +101,9 @@ export function NotificationBell() {
   return (
     <div ref={containerRef} className="relative">
       <button
-        aria-label="Notificacoes"
+        aria-label="Notificações"
         className="relative inline-flex size-10 cursor-pointer items-center justify-center rounded-md border border-line bg-surface text-ink transition hover:border-teal/45 hover:bg-teal-soft"
-        title="Notificacoes"
+        title="Notificações"
         type="button"
         onClick={() => setIsOpen((current) => !current)}
       >
@@ -118,7 +118,7 @@ export function NotificationBell() {
       {isOpen && (
         <div className="fixed right-3 top-[68px] z-[80] flex max-h-[75vh] w-[min(92vw,22rem)] flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-panel lg:right-5">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <span className="text-sm font-semibold text-ink">Notificacoes</span>
+            <span className="text-sm font-semibold text-ink">Notificações</span>
             {unreadCount > 0 && (
               <button
                 className="cursor-pointer text-xs font-semibold text-teal hover:underline"
@@ -132,7 +132,7 @@ export function NotificationBell() {
 
           <div className="overflow-y-auto" onScroll={handleScroll}>
             {notifications.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm text-muted">Nenhuma notificacao ainda.</p>
+              <p className="px-4 py-8 text-center text-sm text-muted">Nenhuma notificação ainda.</p>
             ) : (
               notifications.map((notification) => {
                 const isInvite = notification.type === 'GROUP_INVITE' && Boolean(notification.data?.groupPublicId)

@@ -36,11 +36,11 @@ export function GroupListItem({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="mb-1 text-xs font-semibold uppercase text-teal">
-            {group.privacy === 'PRIVATE' ? 'Privado' : 'Publico'}
+            {group.privacy === 'PRIVATE' ? 'Privado' : 'Público'}
             {canOpen && ' - meu grupo'}
           </p>
           <h2 className="text-lg font-semibold">{group.name}</h2>
-          <p className="mt-1 text-sm text-muted">{group.description || 'Grupo sem descricao.'}</p>
+          <p className="mt-1 text-sm text-muted">{group.description || 'Grupo sem descrição.'}</p>
         </div>
         {canJoin && onJoin && (
           <Button

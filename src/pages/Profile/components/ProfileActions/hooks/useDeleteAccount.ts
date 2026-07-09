@@ -15,7 +15,7 @@ export function useDeleteAccount(userId: string) {
   })
 
   function requestDelete() {
-    if (window.confirm('Remover sua conta? Esta acao nao pode ser desfeita.')) {
+    if (window.confirm('Remover sua conta? Esta ação não pode ser desfeita.')) {
       deleteMutation.mutate()
     }
   }

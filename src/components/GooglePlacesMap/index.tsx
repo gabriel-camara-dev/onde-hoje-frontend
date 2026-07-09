@@ -270,7 +270,7 @@ export function GooglePlacesMap({
 
     if (!navigator.geolocation) {
       if (!options.silent) {
-        setError('Seu navegador nao disponibilizou geolocalizacao.')
+        setError('Seu navegador não disponibilizou geolocalizacao.')
       }
       return
     }
@@ -288,7 +288,7 @@ export function GooglePlacesMap({
       },
       () => {
         if (!options.silent) {
-          setError('Nao foi possivel acessar sua localizacao. Verifique a permissao do navegador.')
+          setError('Não foi possível acessar sua localização. Verifique a permissão do navegador.')
         }
       },
       {
@@ -578,7 +578,7 @@ export function GooglePlacesMap({
       const { place: hydratedPlace } = await place.fetchFields({ fields: googlePlaceFields })
 
       if (!hydratedPlace.id || !hydratedPlace.displayName || !hydratedPlace.location) {
-        setError('O Google Maps encontrou o local, mas nao retornou coordenadas.')
+        setError('O Google Maps encontrou o local, mas não retornou coordenadas.')
         return
       }
 
@@ -588,7 +588,7 @@ export function GooglePlacesMap({
 
       previewGooglePlaceSearchResult(window.google, map, hydratedPlace, hydratedPlace.location)
     } catch {
-      setError('Nao foi possivel abrir essa sugestao do Google Maps.')
+      setError('Não foi possível abrir essa sugestão do Google Maps.')
     } finally {
       setIsSearching(false)
     }

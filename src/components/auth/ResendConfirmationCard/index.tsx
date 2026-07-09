@@ -14,10 +14,10 @@ export function ResendConfirmationCard({ email = '' }: ResendConfirmationCardPro
   const resendMutation = useMutation({
     mutationFn: () => resendEmailConfirmation(targetEmail),
     onSuccess: () => {
-      toast.success('Se o email existir, enviamos um novo link de confirmacao.')
+      toast.success('Se o email existir, enviamos um novo link de confirmação.')
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Nao foi possivel reenviar o email agora.')
+      toast.error(error instanceof Error ? error.message : 'Não foi possível reenviar o email agora.')
     },
   })
 
@@ -28,9 +28,9 @@ export function ResendConfirmationCard({ email = '' }: ResendConfirmationCardPro
           <Send size={16} />
         </span>
         <div>
-          <p className="text-sm font-semibold text-ink">Nao recebeu o email?</p>
+          <p className="text-sm font-semibold text-ink">Não recebeu o email?</p>
           <p className="mt-0.5 text-xs leading-5 text-muted">
-            Confira spam ou lixo eletronico. Se precisar, reenviamos o link de confirmacao.
+            Confira spam ou lixo eletronico. Se precisar, reenviamos o link de confirmação.
           </p>
         </div>
       </div>
@@ -52,7 +52,7 @@ export function ResendConfirmationCard({ email = '' }: ResendConfirmationCardPro
         </div>
       ) : (
         <p className="text-xs font-medium text-muted">
-          Entre com o email que voce usou no cadastro para reenviar o link de confirmacao.
+          Entre com o email que você usou no cadastro para reenviar o link de confirmação.
         </p>
       )}
     </div>

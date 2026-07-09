@@ -33,7 +33,7 @@ export default function Header() {
               to="/register"
             >
               <UserPlus size={18} />
-              Registrar
+              Entrar
             </Link>
           )}
           {user ? (

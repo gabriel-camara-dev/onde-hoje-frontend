@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Clock3,
+  HelpCircle,
   LogOut,
   MapPinned,
   MessagesSquare,
@@ -12,6 +13,7 @@ import {
 import { Link } from 'react-router-dom'
 import type { User, UserRole } from '../../@types/User'
 import { useAuth } from '../../hooks/useAuth'
+import { useTutorialStore } from '../../stores/tutorialStore'
 import Button from '../ui/Button'
 
 type AppMenuProps = {
@@ -31,7 +33,7 @@ type AppMenuLink = {
 const links: AppMenuLink[] = [
   { href: '/', label: 'Mapa', icon: MapPinned },
   { href: '/ranking', label: 'Ranking', icon: BarChart3 },
-  { href: '/history', label: 'Historico', icon: Clock3 },
+  { href: '/history', label: 'Histórico', icon: Clock3 },
   { href: '/groups', label: 'Grupos', icon: MessagesSquare },
   { href: '/friends', label: 'Amigos', icon: UsersRound, auth: 'authenticated' },
   { href: '/profile', label: 'Perfil', icon: UserRound, auth: 'authenticated' },
@@ -96,6 +98,17 @@ export function AppMenu({ isOpen, onClose, user }: AppMenuProps) {
               {link.label}
             </Link>
           ))}
+          <button
+            className="inline-flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-3 text-left text-sm font-semibold text-ink transition hover:bg-teal-soft hover:text-teal"
+            type="button"
+            onClick={() => {
+              onClose()
+              useTutorialStore.getState().open()
+            }}
+          >
+            <HelpCircle size={18} />
+            Como funciona
+          </button>
         </nav>
 
         {user && (

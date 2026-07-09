@@ -33,7 +33,7 @@ export function useAuth() {
       reset()
     } catch (error) {
       setError('root', {
-        message: error instanceof Error ? error.message : 'Nao foi possivel entrar agora.',
+        message: error instanceof Error ? error.message : 'Não foi possível entrar agora.',
       })
     }
   }
