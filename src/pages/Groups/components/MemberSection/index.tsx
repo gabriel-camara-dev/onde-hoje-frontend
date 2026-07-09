@@ -61,23 +61,23 @@ export function MemberSection({
                 {onAccept && (
                   <Button
                     aria-label="Aceitar membro"
-                    className="size-10 shrink-0 p-0"
+                    className="size-12 shrink-0 p-0"
                     type="button"
                     variant="secondary"
                     onClick={() => onAccept(member.user.username)}
                   >
-                    <Check size={18} />
+                    <Check size={26} strokeWidth={2.7} />
                   </Button>
                 )}
                 {onRemove && member.role !== 'OWNER' && (
                   <Button
                     aria-label="Remover membro"
-                    className="size-10 shrink-0 p-0"
+                    className="size-12 shrink-0 p-0"
                     type="button"
                     variant="danger"
                     onClick={() => onRemove(member.user.username)}
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={22} strokeWidth={2.4} />
                   </Button>
                 )}
               </span>
