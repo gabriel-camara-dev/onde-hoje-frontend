@@ -41,7 +41,9 @@ type MapClickHandler = (
   event: google.maps.MapMouseEvent
 ) => void
 
-const fallbackCenter = { lat: -23.55052, lng: -46.633308 }
+// Default view: Niteroi, zoomed out. Used until (and if) the device location resolves.
+const fallbackCenter = { lat: -22.8833, lng: -43.1036 }
+const fallbackZoom = 11
 const existingVoteMarkerHitRadiusMeters = 6
 const googlePlaceFields = [
   'addressComponents',
@@ -132,7 +134,7 @@ export function GooglePlacesMap({
           gestureHandling: 'auto',
           mapTypeControl: false,
           streetViewControl: false,
-          zoom: 12,
+          zoom: fallbackZoom,
           zoomControl: true,
         })
 
@@ -292,9 +294,11 @@ export function GooglePlacesMap({
         }
       },
       {
-        enableHighAccuracy: true,
+        // City-level accuracy is enough to center the map and is far more
+        // reliable/faster than high accuracy (which often times out).
+        enableHighAccuracy: false,
         maximumAge: 1000 * 60 * 5,
-        timeout: 8000,
+        timeout: 12000,
       }
     )
   }
@@ -660,17 +664,17 @@ export function GooglePlacesMap({
         </button>
       )}
 
-      {isFullscreen && (
-        <button
-          className="absolute bottom-5 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-line bg-surface/95 px-5 py-2.5 text-sm font-semibold text-ink shadow-panel backdrop-blur"
-          type="button"
-          onClick={toggleFullscreen}
-        >
-          <X size={18} />
-          Fechar mapa
-        </button>
-      )}
       <div className="absolute left-3 right-3 top-3 z-10 grid gap-2 sm:left-4 sm:right-4 sm:top-4 md:left-6 md:right-auto md:w-[720px]">
+        {isFullscreen && (
+          <button
+            className="inline-flex items-center justify-center gap-2 justify-self-end rounded-full border border-line bg-surface/95 px-4 py-2 text-sm font-semibold text-ink shadow-panel backdrop-blur"
+            type="button"
+            onClick={toggleFullscreen}
+          >
+            <X size={18} />
+            Fechar mapa
+          </button>
+        )}
         <form
           className="grid grid-cols-6 gap-2 rounded-lg border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto_auto]"
           onSubmit={submitSearch}

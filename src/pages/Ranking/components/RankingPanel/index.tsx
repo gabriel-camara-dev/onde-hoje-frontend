@@ -4,6 +4,14 @@ import { EmptyState } from '../../../../components/ui/EmptyState'
 import { Panel } from '../../../../components/ui/Panel'
 import { Metric } from '../Metric'
 
+// Medal colours: 1st gold, 2nd silver, 3rd bronze, the rest neutral.
+function medalClass(index: number) {
+  if (index === 0) return 'bg-[#f5c518] text-[#3a2d00] shadow-[0_2px_8px_rgba(245,197,24,.4)]'
+  if (index === 1) return 'bg-[#c8ccd4] text-[#2b2f36] shadow-[0_2px_8px_rgba(200,204,212,.35)]'
+  if (index === 2) return 'bg-[#cd7f32] text-white shadow-[0_2px_8px_rgba(205,127,50,.35)]'
+  return 'bg-surface-muted text-muted border border-line'
+}
+
 type RankingPanelProps = {
   countLabel: string
   icon: ComponentType<{ className?: string; size?: number }>
@@ -34,7 +42,7 @@ export function RankingPanel({
         <Metric label={countLabel} value={totalVotes} />
         <Metric label="lugares ranqueados" value={places.length} />
       </div>
-      <div className="grid gap-2">
+      <div className="grid max-h-[24rem] gap-2 overflow-y-auto pr-1">
         {places.length === 0 ? (
           <EmptyState
             title="Ranking vazio"
@@ -46,12 +54,16 @@ export function RankingPanel({
               key={place.id}
               className="grid grid-cols-[42px_1fr_auto] items-center gap-3 rounded-lg border border-line p-3"
             >
-              <b className="grid size-9 place-items-center rounded-xl bg-amber">{index + 1}</b>
+              <b className={`grid size-9 place-items-center rounded-xl text-sm font-bold ${medalClass(index)}`}>
+                {index + 1}
+              </b>
               <span className="grid min-w-0">
                 <strong className="truncate">{place.name}</strong>
                 <small className="truncate text-muted">{place.formattedAddress}</small>
               </span>
-              <em className="text-sm font-semibold not-italic text-teal">{place.voteCount} votos</em>
+              <em className="shrink-0 text-sm font-semibold not-italic text-teal">
+                {place.voteCount} votos
+              </em>
             </article>
           ))
         )}

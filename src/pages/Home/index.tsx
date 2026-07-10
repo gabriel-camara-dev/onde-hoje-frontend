@@ -1,3 +1,4 @@
+import { CreateGroupModal } from '../../components/CreateGroupModal'
 import { RequireAccountModal } from '../../components/auth/RequireAccountModal'
 import { GooglePlacesMap } from '../../components/GooglePlacesMap'
 import { HomeSidebar, PlaceVoteDialog } from './components'
@@ -31,10 +32,13 @@ export default function Home() {
           onCancelVote={home.cancelSelectedVote}
           onClose={home.closeSelectedPlace}
           onCopyVoteLink={home.copyVoteLink}
+          onCreateGroup={home.openCreateGroup}
           onDayChange={home.changeMapDay}
           onSubmit={home.submitVote}
         />
       )}
+
+      {home.isCreateGroupOpen && <CreateGroupModal onClose={home.closeCreateGroup} />}
 
       <div className="relative -mx-3 bg-paper md:h-[calc(100dvh-158px)] md:overflow-hidden md:bg-surface lg:-mx-5 lg:h-[calc(100dvh-178px)]">
         <GooglePlacesMap

@@ -18,7 +18,7 @@ type FriendColumnProps = {
 }
 
 const iconButtonBase =
-  'grid size-9 shrink-0 cursor-pointer place-items-center rounded-md transition disabled:cursor-not-allowed disabled:opacity-60'
+  'grid size-10 shrink-0 cursor-pointer place-items-center rounded-md transition disabled:cursor-not-allowed disabled:opacity-60'
 
 export function FriendColumn({
   acceptAction,

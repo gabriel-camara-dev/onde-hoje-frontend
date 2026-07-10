@@ -2,9 +2,13 @@ import { Check, Trash2 } from 'lucide-react'
 import type { FriendListItem } from '../../../../@types/OndeHoje'
 import type { GroupMemberSummary } from '../../../../api/ondeHoje'
 import { Avatar } from '../../../../components/Avatar'
-import Button from '../../../../components/ui/Button'
 import { EmptyState } from '../../../../components/ui/EmptyState'
 import { FriendshipButton } from '../../../../components/FriendshipButton'
+
+// Plain icon buttons: the shared <Button> keeps its px-4/py-2 padding even with
+// p-0 (Tailwind source order), which squishes an icon-only button.
+const iconButtonBase =
+  'grid size-12 shrink-0 cursor-pointer place-items-center rounded-md transition'
 
 export function MemberSection({
   currentUserPublicId,
@@ -59,26 +63,24 @@ export function MemberSection({
                   />
                 )}
                 {onAccept && (
-                  <Button
+                  <button
                     aria-label="Aceitar membro"
-                    className="size-12 shrink-0 p-0"
+                    className={`${iconButtonBase} border border-line bg-surface text-ink hover:border-teal/45 hover:bg-teal-soft`}
                     type="button"
-                    variant="secondary"
                     onClick={() => onAccept(member.user.username)}
                   >
                     <Check size={26} strokeWidth={2.7} />
-                  </Button>
+                  </button>
                 )}
                 {onRemove && member.role !== 'OWNER' && (
-                  <Button
+                  <button
                     aria-label="Remover membro"
-                    className="size-12 shrink-0 p-0"
+                    className={`${iconButtonBase} bg-red-700 text-white hover:bg-red-800`}
                     type="button"
-                    variant="danger"
                     onClick={() => onRemove(member.user.username)}
                   >
-                    <Trash2 size={22} strokeWidth={2.4} />
-                  </Button>
+                    <Trash2 size={24} strokeWidth={2.5} />
+                  </button>
                 )}
               </span>
             </div>

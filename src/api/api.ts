@@ -71,8 +71,42 @@ function redirectToLoginPreservingIntent() {
   window.location.assign(`/login?returnTo=${returnTo}`)
 }
 
+// Reloads the page at most once per 20s, so a transient failure that "just needs
+// a refresh" recovers on its own instead of showing a scary error. The guard
+// prevents an infinite reload loop when the failure is persistent.
+function maybeReloadOnUnknownError() {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  const KEY = 'onde-hoje:last-error-reload'
+  const now = Date.now()
+  const last = Number(sessionStorage.getItem(KEY) || 0)
+
+  if (now - last < 20000) {
+    return false
+  }
+
+  sessionStorage.setItem(KEY, String(now))
+  window.location.reload()
+  return true
+}
+
 const onResponseError = (options: { logoutOnUnauthorized?: boolean } = {}) => (error: unknown) => {
-  if (axios.isAxiosError(error) && error.message === 'Network Error') {
+  const isNetworkError = axios.isAxiosError(error) && error.message === 'Network Error'
+  const status = axios.isAxiosError(error) ? error.response?.status : undefined
+  const method = axios.isAxiosError(error) ? error.config?.method?.toLowerCase() : undefined
+
+  // Unknown/transient failure while loading data (GET): refresh instead of
+  // dumping an error the user can't act on. Mutations are left alone so form
+  // data isn't lost.
+  if (method === 'get' && (isNetworkError || (status !== undefined && status >= 500))) {
+    if (maybeReloadOnUnknownError()) {
+      return new Promise<never>(() => {})
+    }
+  }
+
+  if (isNetworkError) {
     return Promise.reject(
       new Error(
         `Não consegui conectar na API em ${API_BASE_URL}. Verifique se o backend esta rodando.`
@@ -81,8 +115,6 @@ const onResponseError = (options: { logoutOnUnauthorized?: boolean } = {}) => (e
   }
 
   if (axios.isAxiosError(error)) {
-    const status = error.response?.status
-
     if (status === 401 && options.logoutOnUnauthorized) {
       useUserStore.getState().logout()
       redirectToLoginPreservingIntent()

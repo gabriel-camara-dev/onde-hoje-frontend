@@ -19,6 +19,7 @@ type PlaceVoteDialogProps = {
   onCancelVote: (form: FormData) => void
   onClose: () => void
   onCopyVoteLink?: (placeId: string, city?: string | null) => void
+  onCreateGroup?: () => void
   onDayChange: (day: string) => void
   onSubmit: (form: FormData) => void
   place?: MapPlace
@@ -41,6 +42,7 @@ export function PlaceVoteDialog({
   onCancelVote,
   onClose,
   onCopyVoteLink,
+  onCreateGroup,
   onDayChange,
   onSubmit,
   place,
@@ -65,12 +67,12 @@ export function PlaceVoteDialog({
       <div className="flex min-h-full items-center justify-center">
         <section
           aria-modal="true"
-          className="grid max-h-[calc(100dvh-2rem)] w-full max-w-md gap-2.5 overflow-y-auto rounded-lg border border-line bg-surface p-3.5 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)] lg:max-h-[calc(100dvh-8rem)]"
+          className="grid max-h-[calc(100dvh-2rem)] w-full max-w-md gap-2.5 overflow-x-hidden overflow-y-auto rounded-lg border border-line bg-surface p-3.5 text-ink shadow-[0_24px_70px_rgba(0,0,0,.24)] lg:max-h-[calc(100dvh-8rem)]"
           role="dialog"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex items-start justify-between gap-3 border-b border-line pb-3">
-            <div className="min-w-0">
+          <div className="flex min-w-0 items-start justify-between gap-3 border-b border-line pb-3">
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase text-teal">{dialogTitle}</p>
               <h2 className="mt-1 truncate text-xl font-semibold">{placeTitle}</h2>
               {googlePlaceName && googlePlaceName !== placeTitle && (
@@ -90,6 +92,7 @@ export function PlaceVoteDialog({
 
           <VotePanel
             canDecline={canDecline}
+            onCreateGroup={onCreateGroup}
             groups={groups}
             hasUserVote={hasUserVote}
             isFreeMapPoint={isFreeMapPoint}

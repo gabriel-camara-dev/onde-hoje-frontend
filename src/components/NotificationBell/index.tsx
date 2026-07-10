@@ -116,12 +116,12 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="fixed right-3 top-[68px] z-[80] flex max-h-[75vh] w-[min(92vw,22rem)] flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-panel lg:right-5">
-          <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <span className="text-sm font-semibold text-ink">Notificações</span>
+        <div className="fixed right-[3vw] top-[68px] z-[80] flex max-h-[75vh] w-[94vw] flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-panel sm:right-3 sm:w-[24rem] lg:right-5">
+          <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+            <span className="truncate text-sm font-semibold text-ink">Notificações</span>
             {unreadCount > 0 && (
               <button
-                className="cursor-pointer text-xs font-semibold text-teal hover:underline"
+                className="shrink-0 cursor-pointer whitespace-nowrap text-xs font-semibold text-teal hover:underline"
                 type="button"
                 onClick={() => markAllRead()}
               >

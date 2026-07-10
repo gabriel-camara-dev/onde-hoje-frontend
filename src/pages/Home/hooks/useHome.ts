@@ -38,6 +38,7 @@ export function useHome() {
   const [draftPlace, setDraftPlace] = useState<GooglePlaceDraft>()
   const [requestedFriendUsernames, setRequestedFriendUsernames] = useState<Set<string>>(new Set())
   const [showRequireAccountModal, setShowRequireAccountModal] = useState(false)
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
 
   useEffect(() => {
     saveHomeMapFilters(filters)
@@ -406,6 +407,16 @@ export function useHome() {
     }
   }
 
+  function openCreateGroup() {
+    // Not logged in -> close the vote dialog and show the account modal instead.
+    if (!requireAuth()) {
+      closeSelectedPlace()
+      return
+    }
+
+    setIsCreateGroupOpen(true)
+  }
+
   function closeSelectedPlace() {
     setDraftPlace(undefined)
     setSelectedPlace(undefined)
@@ -478,8 +489,11 @@ export function useHome() {
       topPlacesQuery.isLoading ||
       isVotingPending ||
       requestFriendshipMutation.isPending,
+    isCreateGroupOpen,
     // handlers
     closeRequireAccountModal: () => setShowRequireAccountModal(false),
+    openCreateGroup,
+    closeCreateGroup: () => setIsCreateGroupOpen(false),
     closeSelectedPlace,
     changeMapDay,
     setWeekView,

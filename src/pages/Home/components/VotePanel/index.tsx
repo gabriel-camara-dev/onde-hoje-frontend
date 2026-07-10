@@ -6,6 +6,9 @@ import Select from '../../../../components/ui/Select'
 import { formatDisplayDate } from '../../../../lib/date'
 import { voteTypeOptions } from '../../homeVoteTypeOptions'
 
+// Sentinel value for the "Criar grupo" option in the group select.
+const CREATE_GROUP_VALUE = '__create_group__'
+
 type VotePanelProps = {
   canChooseVoteType?: boolean
   canDecline?: boolean
@@ -18,6 +21,7 @@ type VotePanelProps = {
   minDay: string
   onDayChange: (day: string) => void
   onCancelVote: (form: FormData) => void
+  onCreateGroup?: () => void
   onSubmit: (form: FormData) => void
   googlePlaceName?: string | null
   placeName?: string
@@ -38,6 +42,7 @@ export function VotePanel({
   minDay,
   onDayChange,
   onCancelVote,
+  onCreateGroup,
   onSubmit,
   googlePlaceName,
   placeName,
@@ -46,6 +51,7 @@ export function VotePanel({
   voteCount,
 }: VotePanelProps) {
   const [going, setGoing] = useState(true)
+  const [groupValue, setGroupValue] = useState(selectedGroupPublicId ?? '')
   // "Não vou" only makes sense when the place already has a going vote for the
   // selected day. useHome passes a day-accurate `canDecline`; fall back to the
   // displayed (possibly week-aggregated) count when it isn't provided.
@@ -99,7 +105,7 @@ export function VotePanel({
   }
 
   return (
-    <section className="pointer-events-auto text-ink">
+    <section className="pointer-events-auto min-w-0 text-ink">
       {voteCount !== undefined && (
         <span className="inline-flex rounded-full bg-teal-soft px-3 py-1 text-sm font-semibold text-teal">
           {voteCount} votos em {formatDisplayDate(selectedDay)}
@@ -138,7 +144,7 @@ export function VotePanel({
               }
             />
           )}
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-2.5 sm:grid-cols-2 [&_input]:min-w-0">
             <Input
               label="Dia"
               max={maxDay}
@@ -152,13 +158,21 @@ export function VotePanel({
             <Input label="Horário (opcional)" name="voteTime" type="time" />
           </div>
           <Select
-            defaultValue={selectedGroupPublicId ?? ''}
+            value={groupValue}
             label="Grupo"
             name="groupPublicId"
             options={[
               { label: 'Público', value: '' },
               ...groups.map((group) => ({ label: group.name, value: group.id })),
+              { label: '＋ Criar grupo', value: CREATE_GROUP_VALUE },
             ]}
+            onChange={(nextValue) => {
+              if (nextValue === CREATE_GROUP_VALUE) {
+                onCreateGroup?.()
+                return
+              }
+              setGroupValue(nextValue)
+            }}
           />
           {canChooseVoteType && (
             <fieldset disabled={isPending}>
