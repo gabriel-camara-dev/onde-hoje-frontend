@@ -1,6 +1,7 @@
 import { CalendarDays, LocateFixed, Maximize, Search, Vote, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { MapPlace, VoteType } from '../../@types/OndeHoje'
 import { loadGoogleMaps } from '../../lib/googleMaps'
 import Button from '../ui/Button'
@@ -643,7 +644,7 @@ export function GooglePlacesMap({
     })
   }
 
-  return (
+  const content = (
     <section
       className={
         isFullscreen
@@ -664,17 +665,18 @@ export function GooglePlacesMap({
         </button>
       )}
 
+      {isFullscreen && (
+        <button
+          className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] left-1/2 z-[80] inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-line bg-teal px-6 py-3 text-sm font-semibold text-on-teal shadow-panel"
+          type="button"
+          onClick={toggleFullscreen}
+        >
+          <X size={18} />
+          Fechar mapa
+        </button>
+      )}
+
       <div className="absolute left-3 right-3 top-3 z-10 grid gap-2 sm:left-4 sm:right-4 sm:top-4 md:left-6 md:right-auto md:w-[720px]">
-        {isFullscreen && (
-          <button
-            className="inline-flex items-center justify-center gap-2 justify-self-end rounded-full border border-line bg-surface/95 px-4 py-2 text-sm font-semibold text-ink shadow-panel backdrop-blur"
-            type="button"
-            onClick={toggleFullscreen}
-          >
-            <X size={18} />
-            Fechar mapa
-          </button>
-        )}
         <form
           className="grid grid-cols-6 gap-2 rounded-lg border border-line bg-surface/95 p-2 shadow-panel backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-end lg:grid-cols-[170px_minmax(0,1fr)_auto_auto_auto]"
           onSubmit={submitSearch}
@@ -774,6 +776,10 @@ export function GooglePlacesMap({
       </div>
     </section>
   )
+
+  // When fullscreen, portal to <body> so it escapes any ancestor stacking context
+  // (page-transition/sticky header) and truly covers the whole viewport.
+  return isFullscreen ? createPortal(content, document.body) : content
 }
 
 // Fases do brilho pulsante aplicado ao marcador mais votado do dia.

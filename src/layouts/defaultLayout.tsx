@@ -18,7 +18,7 @@ export function DefaultLayout() {
   }, [openTutorial])
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden bg-paper p-3 lg:p-5">
+    <div className="flex min-h-screen flex-col overflow-x-clip bg-paper p-3 lg:p-5">
       <Header />
       <main className="min-w-0 flex-1">
         <PageTransition>

@@ -5,6 +5,7 @@ import { deviceHasAccount } from '../../lib/deviceAccount'
 import { useUserStore } from '../../stores/userStore'
 import { AppMenu } from '../AppMenu'
 import { Avatar } from '../Avatar'
+import { Logo } from '../Logo'
 import { NotificationBell } from '../NotificationBell'
 import { ThemeToggle } from '../ThemeToggle'
 
@@ -16,15 +17,9 @@ export default function Header() {
 
   return (
     <>
-      <header className="relative z-40 mb-4 flex items-center justify-between rounded-lg border border-line bg-surface/95 p-2 text-ink shadow-panel backdrop-blur">
-        <Link className="inline-flex items-center gap-3 font-semibold" to="/">
-          <span className="grid size-9 place-items-center rounded-md bg-contrast text-xs font-medium text-on-contrast">
-            OH
-          </span>
-          <span className="grid leading-tight">
-            Onde Hoje
-            <small className="text-xs font-medium text-muted">Mapa social</small>
-          </span>
+      <header className="sticky top-0 z-40 mb-4 flex items-center justify-between rounded-lg border border-line bg-surface/95 p-2 text-ink shadow-panel backdrop-blur">
+        <Link aria-label="Onde Hoje — início" className="inline-flex items-center" to="/">
+          <Logo className="text-[26px] sm:text-[30px]" />
         </Link>
 
         <div className="flex items-center gap-2">

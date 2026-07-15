@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Logo } from '../Logo'
 
 type TutorialStep = {
   icon: LucideIcon
@@ -82,9 +83,13 @@ export function TutorialModal({ onClose }: { onClose: () => void }) {
         </button>
 
         <div className="grid gap-4 p-7 pt-9 text-center">
-          <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-teal-soft text-teal">
-            <Icon size={30} />
-          </div>
+          {isFirst ? (
+            <Logo className="mx-auto text-[32px]" />
+          ) : (
+            <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-teal-soft text-teal">
+              <Icon size={30} />
+            </div>
+          )}
           <div className="grid gap-2">
             <h2 className="text-xl font-bold">{step.title}</h2>
             <p className="text-sm leading-relaxed text-muted">{step.description}</p>

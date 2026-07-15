@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { Logo } from '../Logo'
 import { PageTransition } from '../PageTransition'
 
 type AuthShellProps = {
@@ -17,9 +18,7 @@ export function AuthShell({ title, description, actions, children }: AuthShellPr
           <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
             <section className="relative flex flex-col justify-between gap-8 bg-[radial-gradient(circle_at_top_left,_rgba(15,118,110,.18),_transparent_42%),linear-gradient(160deg,_#0f766e,_#063f3a_60%,_#042f2e)] p-8 text-white lg:p-10">
               <div className="max-w-xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-soft/90">
-                  OndeHoje
-                </p>
+                <Logo className="text-[30px]" tone="light" />
                 <h1 className="mt-4 text-4xl font-semibold leading-tight lg:text-5xl">{title}</h1>
                 <p className="mt-4 max-w-lg text-sm leading-6 text-white/78 lg:text-base">
                   {description}

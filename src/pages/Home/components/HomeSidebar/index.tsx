@@ -1,4 +1,4 @@
-import { CalendarDays, Navigation, TrendingUp, Vote } from 'lucide-react'
+import { CalendarDays, TrendingUp, Vote } from 'lucide-react'
 import type { Group, MapPlace } from '../../../../@types/OndeHoje'
 import type { MapFilters } from '../../../../api/ondeHoje'
 import Select from '../../../../components/ui/Select'
@@ -38,10 +38,6 @@ export function HomeSidebar({
       <StatusBanner error={errors.find(Boolean)} loading={isLoading} />
 
       <section className="pointer-events-auto rounded-lg border border-line bg-surface/95 p-3 text-ink shadow-panel backdrop-blur">
-        <p className="inline-flex items-center gap-2 rounded-full bg-teal-soft px-3 py-1 text-xs font-semibold text-teal">
-          <Navigation size={14} />
-          mapa principal
-        </p>
         <h1 className="mt-3 text-2xl font-semibold leading-tight">Veja onde a galera vai hoje.</h1>
         <p className="mt-2 text-sm text-muted">
           Busque um lugar no Google Maps, salve na base e vote. Lugares com votos aparecem como
