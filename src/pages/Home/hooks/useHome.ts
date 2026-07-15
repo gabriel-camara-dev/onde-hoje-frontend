@@ -17,6 +17,7 @@ import {
 import type { MapPlace, VoteType } from '../../../@types/OndeHoje'
 import type { GooglePlaceDraft } from '../../../components/GooglePlacesMap'
 import { formatInputDate } from '../../../lib/date'
+import { setLastVoteGroup } from '../../../lib/lastVoteGroup'
 import { useUserStore } from '../../../stores/userStore'
 import { loadHomeMapFilters, saveHomeMapFilters } from '../homeMapFiltersStorage'
 import { voteTypeOptions } from '../homeVoteTypeOptions'
@@ -302,6 +303,7 @@ export function useHome() {
       return
     }
 
+    setLastVoteGroup(String(form.get('groupPublicId') || ''))
     voteMutation.mutate({
       day,
       placeId: selectedPlaceForDay.id,
@@ -332,6 +334,7 @@ export function useHome() {
 
     const nickname = String(form.get('placeNickname') || '').trim()
 
+    setLastVoteGroup(String(form.get('groupPublicId') || ''))
     createAndVoteMutation.mutate({
       day,
       draft: {

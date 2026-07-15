@@ -4,6 +4,7 @@ import Button from '../../../../components/ui/Button'
 import Input from '../../../../components/ui/Input'
 import Select from '../../../../components/ui/Select'
 import { formatDisplayDate } from '../../../../lib/date'
+import { getLastVoteGroup } from '../../../../lib/lastVoteGroup'
 import { voteTypeOptions } from '../../homeVoteTypeOptions'
 
 // Sentinel value for the "Criar grupo" option in the group select.
@@ -51,7 +52,15 @@ export function VotePanel({
   voteCount,
 }: VotePanelProps) {
   const [going, setGoing] = useState(true)
-  const [groupValue, setGroupValue] = useState(selectedGroupPublicId ?? '')
+  // Default the group to the last one the user voted with ('' = Público) when it
+  // is still an active group; otherwise fall back to the current map filter.
+  const [groupValue, setGroupValue] = useState(() => {
+    const last = getLastVoteGroup()
+    if (last !== null && (last === '' || groups.some((group) => group.id === last))) {
+      return last
+    }
+    return selectedGroupPublicId ?? ''
+  })
   // "Não vou" only makes sense when the place already has a going vote for the
   // selected day. useHome passes a day-accurate `canDecline`; fall back to the
   // displayed (possibly week-aggregated) count when it isn't provided.

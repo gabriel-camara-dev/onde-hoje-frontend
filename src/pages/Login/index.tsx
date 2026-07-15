@@ -14,20 +14,20 @@ export function Login() {
       title="Entre na sua conta"
       description="Acesse sua conta para votar, participar de grupos e acompanhar seu histórico."
       actions={
-        <>
+        <div className="flex w-full gap-2">
           <Link
-            className="inline-flex min-h-11 items-center rounded-xl bg-teal px-4 py-2 text-sm font-semibold text-on-teal transition hover:bg-teal-dark"
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-teal px-3 py-2 text-center text-sm font-semibold text-on-teal transition hover:bg-teal-dark"
             to={registerPath}
           >
             Criar conta
           </Link>
           <Link
-            className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-teal-soft"
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface px-3 py-2 text-center text-sm font-semibold text-ink transition hover:bg-teal-soft"
             to="/"
           >
             Explorar mapa público
           </Link>
-        </>
+        </div>
       }
     >
       <StatusBanner
