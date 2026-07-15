@@ -1,7 +1,6 @@
 import { CalendarDays, LocateFixed, Maximize, Search, Vote, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import type { MapPlace, VoteType } from '../../@types/OndeHoje'
 import { loadGoogleMaps } from '../../lib/googleMaps'
 import Button from '../ui/Button'
@@ -175,6 +174,27 @@ export function GooglePlacesMap({
       setIsMapReady(false)
     }
   }, [])
+
+  // The map container changes size when entering/leaving fullscreen. Google Maps
+  // needs a resize event to repaint its tiles, otherwise it can render blank.
+  // Preserve the center across the resize so the view doesn't jump.
+  useEffect(() => {
+    const map = mapRef.current
+
+    if (!map || !window.google?.maps) {
+      return
+    }
+
+    const center = map.getCenter()
+    const timer = window.setTimeout(() => {
+      window.google.maps.event.trigger(map, 'resize')
+      if (center) {
+        map.setCenter(center)
+      }
+    }, 90)
+
+    return () => window.clearTimeout(timer)
+  }, [isFullscreen, isMapReady])
 
   useEffect(() => {
     const map = mapRef.current
@@ -644,7 +664,7 @@ export function GooglePlacesMap({
     })
   }
 
-  const content = (
+  return (
     <section
       className={
         isFullscreen
@@ -776,10 +796,6 @@ export function GooglePlacesMap({
       </div>
     </section>
   )
-
-  // When fullscreen, portal to <body> so it escapes any ancestor stacking context
-  // (page-transition/sticky header) and truly covers the whole viewport.
-  return isFullscreen ? createPortal(content, document.body) : content
 }
 
 // Fases do brilho pulsante aplicado ao marcador mais votado do dia.

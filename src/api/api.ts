@@ -142,20 +142,6 @@ const onResponseError = (options: { logoutOnUnauthorized?: boolean } = {}) => (e
   return Promise.reject(error)
 }
 
-// DEV-ONLY: artificial 2s delay on GET requests so the "Carregando dados..."
-// banner (which only surfaces after 1s of loading) is visible while testing the
-// loading states. Guarded by import.meta.env.DEV, so it's a no-op in the
-// production build — remove this interceptor if you want instant dev loads back.
-const devDelayGet = async (config: InternalAxiosRequestConfig) => {
-  if (import.meta.env.DEV && config.method?.toLowerCase() === 'get') {
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-  }
-
-  return config
-}
-
 axiosPrivate.interceptors.request.use(onRequest, Promise.reject)
-axiosPublic.interceptors.request.use(devDelayGet)
-axiosPrivate.interceptors.request.use(devDelayGet)
 axiosPublic.interceptors.response.use(undefined, onResponseError())
 axiosPrivate.interceptors.response.use(undefined, onResponseError({ logoutOnUnauthorized: true }))
