@@ -185,12 +185,12 @@ export function VotePanel({
           />
           {canChooseVoteType && (
             <fieldset disabled={isPending}>
-              <legend className="mb-3 block text-xs font-medium text-muted">Tipo do voto</legend>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              <legend className="mb-2 block text-xs font-medium text-muted">Tipo do voto</legend>
+              <div className="flex flex-wrap justify-center gap-1.5 sm:grid sm:grid-cols-5 sm:gap-2">
                 {voteTypeOptions.map(({ icon: Icon, label, optionClassName, value }) => (
                   <label
                     key={value}
-                    className={`grid min-h-12 cursor-pointer place-items-center gap-0.5 rounded-md border border-line bg-surface-muted px-1.5 py-1.5 text-xs font-semibold text-muted transition ${optionClassName}`}
+                    className={`grid min-h-10 basis-[calc(33.333%-0.5rem)] cursor-pointer place-items-center gap-0.5 rounded-md border border-line bg-surface-muted px-1 py-1 text-[11px] font-semibold text-muted transition sm:min-h-12 sm:basis-auto sm:px-1.5 sm:py-1.5 sm:text-xs ${optionClassName}`}
                   >
                     <input
                       className="sr-only"
