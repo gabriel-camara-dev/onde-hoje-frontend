@@ -9,10 +9,7 @@ export function RegisterForm() {
 
   return (
     <>
-      <StatusBanner
-        error={errors.root?.message}
-        message="Depois do cadastro, você será levado para o login. Confirme o email em até 5 minutos para manter a conta ativa."
-      />
+      <StatusBanner error={errors.root?.message} />
 
       <Panel className="rounded-2xl p-5">
         <p className="mb-2 text-xs font-semibold uppercase text-teal">Cadastro</p>
