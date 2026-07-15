@@ -116,7 +116,7 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="fixed right-[3vw] top-[68px] z-[80] flex max-h-[75vh] w-[94vw] flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-panel sm:right-3 sm:w-[24rem] lg:right-5">
+        <div className="fixed left-1/2 top-[68px] z-[80] flex max-h-[75vh] w-[94vw] -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-panel sm:left-auto sm:right-3 sm:w-[24rem] sm:translate-x-0 lg:right-5">
           <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
             <span className="truncate text-sm font-semibold text-ink">Notificações</span>
             {unreadCount > 0 && (

@@ -168,6 +168,18 @@
   }
 }
 
+/* Fullscreen map: hide the sticky header + footer so they don't paint over the
+   map's fixed layer (search bar / "Fechar mapa" button). Toggled from
+   GooglePlacesMap via the `map-fullscreen` body class. */
+body.map-fullscreen {
+  overflow: hidden;
+}
+
+body.map-fullscreen header,
+body.map-fullscreen footer {
+  display: none;
+}
+
 .menu-overlay-enter {
   animation: menuOverlayIn 160ms ease-out both;
 }

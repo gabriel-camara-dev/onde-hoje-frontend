@@ -175,6 +175,14 @@ export function GooglePlacesMap({
     }
   }, [])
 
+  // While fullscreen, hide the app chrome (sticky header + footer). They live in
+  // a higher stacking context than the map's fixed layer, so otherwise they'd
+  // paint over the map — hiding the search bar and the "Fechar mapa" button.
+  useEffect(() => {
+    document.body.classList.toggle('map-fullscreen', isFullscreen)
+    return () => document.body.classList.remove('map-fullscreen')
+  }, [isFullscreen])
+
   // The map container changes size when entering/leaving fullscreen. Google Maps
   // needs a resize event to repaint its tiles, otherwise it can render blank.
   // Preserve the center across the resize so the view doesn't jump.
