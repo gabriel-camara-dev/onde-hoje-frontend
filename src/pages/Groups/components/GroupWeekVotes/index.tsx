@@ -9,6 +9,7 @@ import { formatDisplayDate } from '../../../../lib/date'
 import { useGroupWeekVotes } from './hooks/useGroupWeekVotes'
 
 const MAX_AVATARS = 6
+const TOP_PLACES_PER_DAY = 3
 
 /** "Hoje" / "Amanhã" read better than a date for the days people actually plan around. */
 function dayLabel(day: string, index: number) {
@@ -29,6 +30,9 @@ function dayLabel(day: string, index: number) {
 }
 
 function DayVotes({ day, index }: { day: MapHistoryDay; index: number }) {
+  // Already ordered by voteCount desc by the API, so this really is the top 3.
+  const topPlaces = day.places.slice(0, TOP_PLACES_PER_DAY)
+
   return (
     <section className="grid gap-2">
       <div className="flex items-baseline justify-between gap-2 border-b border-line pb-1">
@@ -38,16 +42,18 @@ function DayVotes({ day, index }: { day: MapHistoryDay; index: number }) {
         </h3>
         {day.places.length > 0 && (
           <span className="text-xs font-semibold text-muted">
-            {day.places.length} {day.places.length === 1 ? 'lugar' : 'lugares'}
+            {day.places.length > TOP_PLACES_PER_DAY
+              ? `top ${TOP_PLACES_PER_DAY} de ${day.places.length}`
+              : `${day.places.length} ${day.places.length === 1 ? 'lugar' : 'lugares'}`}
           </span>
         )}
       </div>
 
-      {day.places.length === 0 ? (
+      {topPlaces.length === 0 ? (
         <p className="px-1 py-2 text-sm text-muted">Nenhum voto para este dia.</p>
       ) : (
         <div className="grid gap-2">
-          {day.places.map((place, placeIndex) => {
+          {topPlaces.map((place, placeIndex) => {
             const highlighted = placeIndex === 0 && place.voteCount > 0
             const extraVoters = place.voters.length - MAX_AVATARS
 
