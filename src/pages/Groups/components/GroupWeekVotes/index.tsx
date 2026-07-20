@@ -106,13 +106,13 @@ function DayVotes({ day, index }: { day: MapHistoryDay; index: number }) {
   )
 }
 
-export function GroupWeekVotes({ groupId }: { groupId: string }) {
+export function GroupWeekVotes({ className = '', groupId }: { className?: string; groupId: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const { week, totalVotes, isLoading, error } = useGroupWeekVotes(groupId, isOpen)
 
   return (
     <>
-      <Button type="button" variant="secondary" onClick={() => setIsOpen(true)}>
+      <Button className={className} type="button" variant="secondary" onClick={() => setIsOpen(true)}>
         <CalendarDays size={17} />
         Ver votos
       </Button>

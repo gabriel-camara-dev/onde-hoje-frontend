@@ -10,6 +10,11 @@ import { FriendshipButton } from '../../../../components/FriendshipButton'
 const iconButtonBase =
   'grid size-12 shrink-0 cursor-pointer place-items-center rounded-md transition'
 
+// Outlined until hovered: a destructive action shouldn't outweigh the member's own
+// name. Fill stays for the hover/active state, and the 48px target is untouched.
+const removeButtonStyle =
+  'border border-red-700/40 text-red-700 hover:bg-red-700 hover:text-white dark:border-red-400/40 dark:text-red-400'
+
 export function MemberSection({
   currentUserPublicId,
   friendByUsername,
@@ -75,11 +80,11 @@ export function MemberSection({
                 {onRemove && member.role !== 'OWNER' && (
                   <button
                     aria-label="Remover membro"
-                    className={`${iconButtonBase} bg-red-700 text-white hover:bg-red-800`}
+                    className={`${iconButtonBase} ${removeButtonStyle}`}
                     type="button"
                     onClick={() => onRemove(member.user.username)}
                   >
-                    <Trash2 size={24} strokeWidth={2.5} />
+                    <Trash2 size={20} strokeWidth={2.4} />
                   </button>
                 )}
               </span>

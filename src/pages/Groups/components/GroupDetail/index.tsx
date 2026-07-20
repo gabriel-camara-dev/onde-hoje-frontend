@@ -72,35 +72,47 @@ export function GroupDetail({
   return (
     <>
       <Panel>
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        {/* Single column on phones: identity, then metrics, then actions. Side by
+            side from sm up, with the actions spanning back under both. */}
+        <div className="mb-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
           <div className="min-w-0">
             <p className="mb-2 text-xs font-semibold uppercase text-teal">
               {group.privacy === 'PRIVATE' ? 'Privado' : 'Público'}
               {'myRole' in group ? ` - ${group.myRole}` : ''}
             </p>
-            <h2 className="text-2xl font-semibold">{group.name}</h2>
+            <h2 className="text-2xl font-semibold break-words">{group.name}</h2>
             <p className="mt-2 text-sm text-muted">{group.description || 'Grupo sem descrição.'}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <GroupWeekVotes groupId={group.id} />
-              <Button type="button" variant="secondary" onClick={() => setIsInviteModalOpen(true)}>
-                <UserPlus size={17} />
-                Convidar
-              </Button>
-              {isMember && onLeave && (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => setConfirmAction({ type: 'leave' })}
-                >
-                  <LogOut size={17} />
-                  Sair do grupo
-                </Button>
-              )}
-            </div>
           </div>
+
           <div className="grid grid-cols-2 gap-2">
             <Metric label="membros" value={group.membersCount ?? activeMembers.length} />
             <Metric label="votos hoje" value={group.todayVotesCount ?? 0} />
+          </div>
+
+          {/* flex-1 on phones so the buttons share the row evenly instead of being
+              sized by their label; natural width from sm up. */}
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
+            <GroupWeekVotes className="flex-1 sm:flex-none" groupId={group.id} />
+            <Button
+              className="flex-1 sm:flex-none"
+              type="button"
+              variant="secondary"
+              onClick={() => setIsInviteModalOpen(true)}
+            >
+              <UserPlus size={17} />
+              Convidar
+            </Button>
+            {isMember && onLeave && (
+              <Button
+                className="flex-1 sm:flex-none"
+                type="button"
+                variant="danger"
+                onClick={() => setConfirmAction({ type: 'leave' })}
+              >
+                <LogOut size={17} />
+                Sair do grupo
+              </Button>
+            )}
           </div>
         </div>
 
