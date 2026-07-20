@@ -44,14 +44,10 @@ export default function Home() {
         <GooglePlacesMap
           className="h-[58vh] min-h-[420px] rounded-none border-x-0 border-t-0 shadow-none md:h-full md:min-h-0 md:border-0"
           city={home.filters.city}
-          maxMapDay={home.maxDay}
-          mapDay={home.filters.day}
-          minMapDay={home.minDay}
           places={home.places}
           selectedPlaceId={home.selectedPlace?.id}
           onDraftSelected={home.selectDraft}
           onLocationResolved={(location) => home.changeCity(location.city)}
-          onMapDayChange={home.changeMapDay}
           onPlaceSelected={home.selectPlace}
         />
 
@@ -60,8 +56,12 @@ export default function Home() {
           isLoading={home.isSidebarLoading}
           isWeekView={home.isWeekView}
           groups={home.activeGroups}
+          maxDay={home.maxDay}
+          minDay={home.minDay}
           topPlaces={home.topPlaces}
           userVotesThisWeek={home.userVotesThisWeek}
+          onClearCity={home.clearCity}
+          onDayChange={home.changeMapDay}
           onGroupChange={home.changeGroup}
           onSelectPlace={home.selectPlace}
           onWeekViewChange={home.setWeekView}

@@ -45,9 +45,14 @@ export function useHome() {
     saveHomeMapFilters(filters)
   }, [filters])
 
+  // Searching a place moves the map and sets `city` (see changeCity). That should
+  // narrow the ranking to where you're looking, but not hide markers elsewhere —
+  // so the map query drops the city and always shows every point.
+  const mapFilters = useMemo(() => ({ ...filters, city: '' }), [filters])
+
   const mapQuery = useQuery({
-    queryKey: ['today-map', filters],
-    queryFn: () => getTodayMap(filters),
+    queryKey: ['today-map', mapFilters],
+    queryFn: () => getTodayMap(mapFilters),
     refetchOnMount: 'always',
   })
   const myGroupsQuery = useQuery({
@@ -460,6 +465,12 @@ export function useHome() {
     }
   }
 
+  // Separate from changeCity, which ignores empty values on purpose: a Google
+  // result without a city must not wipe the filter, but clearing it by hand must.
+  function clearCity() {
+    setFilters((currentFilters) => ({ ...currentFilters, city: '' }))
+  }
+
   function changeGroup(groupPublicId?: string) {
     setFilters((currentFilters) => ({ ...currentFilters, groupPublicId }))
   }
@@ -502,6 +513,7 @@ export function useHome() {
     setWeekView,
     copyVoteLink,
     changeCity,
+    clearCity,
     changeGroup,
     selectPlace,
     selectDraft,

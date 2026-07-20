@@ -12,8 +12,12 @@ type HomeSidebarProps = {
   isLoading?: boolean
   isWeekView?: boolean
   groups: Group[]
+  maxDay: string
+  minDay: string
   topPlaces: MapPlace[]
   userVotesThisWeek: number
+  onClearCity: () => void
+  onDayChange: (day: string) => void
   onGroupChange: (groupPublicId?: string) => void
   onSelectPlace: (place: MapPlace) => void
   onWeekViewChange: (week: boolean) => void
@@ -27,8 +31,12 @@ export function HomeSidebar({
   isLoading,
   isWeekView,
   groups,
+  maxDay,
+  minDay,
   topPlaces,
   userVotesThisWeek,
+  onClearCity,
+  onDayChange,
   onGroupChange,
   onSelectPlace,
   onWeekViewChange,
@@ -55,15 +63,23 @@ export function HomeSidebar({
             <CalendarDays size={15} />
             Próximos 7 dias
           </button>
-          <button
-            className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md text-sm font-semibold transition ${
+          {/* Picking a date is what leaves the week view, so the input is the
+              control itself instead of a button that only shows the date. */}
+          <label
+            className={`inline-flex min-h-9 cursor-pointer items-center justify-center rounded-md px-2 text-sm font-semibold transition ${
               isWeekView ? 'text-muted hover:text-ink' : 'bg-teal text-on-teal'
             }`}
-            type="button"
-            onClick={() => onWeekViewChange(false)}
           >
-            {formatDisplayDate(filters.day)}
-          </button>
+            <span className="sr-only">Dia do mapa</span>
+            <input
+              className="w-full cursor-pointer bg-transparent text-center outline-none"
+              max={maxDay}
+              min={minDay}
+              type="date"
+              value={filters.day}
+              onChange={(event) => onDayChange(event.currentTarget.value)}
+            />
+          </label>
         </div>
 
         <div className="mt-4">
@@ -102,6 +118,23 @@ export function HomeSidebar({
             {isWeekView ? 'Próximos 7 dias' : formatDisplayDate(filters.day)}
           </span>
         </div>
+
+        {/* The ranking follows the searched city while the map keeps every point,
+            so name the city — otherwise the list looks like it lost places. */}
+        {filters.city && (
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-md bg-surface-muted px-2 py-1.5">
+            <span className="min-w-0 truncate text-xs font-medium text-muted">
+              Em <strong className="text-ink">{filters.city}</strong>
+            </span>
+            <button
+              className="shrink-0 text-xs font-semibold text-teal hover:underline"
+              type="button"
+              onClick={onClearCity}
+            >
+              Ver todas
+            </button>
+          </div>
+        )}
         <div className="grid gap-2">
           {topPlaces.map((place, index) => (
             <button
