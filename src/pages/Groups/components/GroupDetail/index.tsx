@@ -7,7 +7,7 @@ import { EmptyState } from '../../../../components/ui/EmptyState'
 import Input from '../../../../components/ui/Input'
 import { Modal } from '../../../../components/ui/Modal'
 import { Panel } from '../../../../components/ui/Panel'
-import { GroupDayVotes } from '../GroupDayVotes'
+import { GroupWeekVotes } from '../GroupWeekVotes'
 import { MemberSection } from '../MemberSection'
 import { Metric } from '../Metric'
 import { useGroupDetailState } from './hooks/useGroupDetailState'
@@ -81,6 +81,7 @@ export function GroupDetail({
             <h2 className="text-2xl font-semibold">{group.name}</h2>
             <p className="mt-2 text-sm text-muted">{group.description || 'Grupo sem descrição.'}</p>
             <div className="mt-3 flex flex-wrap gap-2">
+              <GroupWeekVotes groupId={group.id} />
               <Button type="button" variant="secondary" onClick={() => setIsInviteModalOpen(true)}>
                 <UserPlus size={17} />
                 Convidar
@@ -164,8 +165,6 @@ export function GroupDetail({
           />
         </div>
       </Panel>
-
-      <GroupDayVotes groupId={group.id} />
 
       {confirmAction && (
         <Modal

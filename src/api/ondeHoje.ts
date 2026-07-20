@@ -104,13 +104,18 @@ export async function getGlobalRanking(filters: GlobalRankingFilters) {
   return response.data
 }
 
-export async function getMapHistory(filters: MapFilters & { from?: string; to?: string }) {
-  const response = await axiosPublic.get<MapHistoryDay[]>('/map/history', {
+// axiosPrivate (not axiosPublic): the route is public, but only a request carrying
+// the token gets the voters back — and a private group needs it to authorize at all.
+export async function getMapHistory(
+  filters: MapFilters & { from?: string; to?: string; memberVotes?: boolean }
+) {
+  const response = await axiosPrivate.get<MapHistoryDay[]>('/map/history', {
     params: compactParams({
       city: filters.city,
       groupPublicId: filters.groupPublicId,
       from: filters.from,
       to: filters.to,
+      memberVotes: filters.memberVotes ? '1' : undefined,
     }),
   })
 
