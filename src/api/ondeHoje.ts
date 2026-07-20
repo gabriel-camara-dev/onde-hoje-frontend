@@ -96,9 +96,12 @@ export async function getMapPlace(
   return response.data
 }
 
+// axiosPrivate + myGroups: the ranking counts public votes only, so a signed-in
+// user needs the token for their own groups' votes to be counted. Votes from
+// groups they don't belong to are never included.
 export async function getGlobalRanking(filters: GlobalRankingFilters) {
-  const response = await axiosPublic.get<MapPlace[]>('/map/global-ranking', {
-    params: compactParams({ ...filters, limit: 50 }),
+  const response = await axiosPrivate.get<MapPlace[]>('/map/global-ranking', {
+    params: compactParams({ ...filters, limit: 50, myGroups: '1' }),
   })
 
   return response.data
